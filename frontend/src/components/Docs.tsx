@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import { CONGESTION, vehicleColor, type Theme } from '../lib/palette'
-import type { Preset, VehicleType } from '../lib/types'
+import type { Area, Preset, VehicleType } from '../lib/types'
 
 /** Plain-language guide for planners and the public, at #docs. */
 
@@ -17,6 +17,8 @@ const NEWS = [
 ] as const
 
 const SECTIONS = [
+  ['unique', 'What makes it different'],
+  ['features', 'Everything it can do'],
   ['what', 'What this is'],
   ['use', 'How to use it'],
   ['results', 'Reading the results'],
@@ -55,12 +57,15 @@ export default function Docs() {
   const theme = useTheme()
   const [types, setTypes] = useState<VehicleType[]>([])
   const [presets, setPresets] = useState<Preset[]>([])
+  const [areas, setAreas] = useState<Area[]>([])
   useSectionScroll()
   useEffect(() => {
     document.title = 'How it works · Dhaka Traffic Sim'
     api.vehicleTypes().then(setTypes).catch(() => setTypes([]))
     api.presets().then((p) => setPresets(p.presets)).catch(() => setPresets([]))
+    api.areas().then((a) => setAreas(a.areas)).catch(() => setAreas([]))
   }, [])
+  const neighbourhoods = areas.filter((a) => a.kind !== 'city')
 
   return (
     <div className="docs">
@@ -92,6 +97,187 @@ export default function Docs() {
             road map, so you can see what happens when a road closes, a signal is retimed or a U-turn is added, and compare it with how
             things are now.
           </p>
+          <ul className="docs-stats" aria-label="At a glance">
+            <li>
+              <strong>{neighbourhoods.length || 15}</strong> neighbourhoods, every street, plus the whole city
+            </li>
+            <li>
+              <strong>{types.length || 7}</strong> vehicle types, each driven individually
+            </li>
+            <li>
+              <strong>52</strong> real waterlogging spots from the news
+            </li>
+            <li>
+              <strong>12</strong> kinds of road change, most applied live
+            </li>
+          </ul>
+
+          <section id="unique">
+            <h2>What makes it different</h2>
+            <p>
+              Most traffic tools either colour roads from phone data, which shows today but can't answer "what if", or are professional
+              packages built for European and American traffic. This one is a what-if simulator made for Dhaka.
+            </p>
+            <div className="docs-highlights">
+              <div className="docs-highlight">
+                <h3>Drives like Dhaka</h3>
+                <p>
+                  Motorcycles, CNGs and rickshaws weave through gaps instead of keeping to lanes, drivers nose into small gaps at
+                  junctions, and rickshaws use main roads despite the ban. Switch each of these off to see how much it matters.
+                </p>
+                <a href="#docs/method">Dhaka-style driving</a>
+              </div>
+              <div className="docs-highlight">
+                <h3>Battery rickshaws included</h3>
+                <p>
+                  The vehicle mix starts from the 2023 RSTP road survey and counts battery rickshaws, which now outnumber pedal
+                  rickshaws, as a vehicle type of their own with their own speed and size.
+                </p>
+                <a href="#docs/method">Vehicles</a>
+              </div>
+              <div className="docs-highlight">
+                <h3>Flooding taken from the news</h3>
+                <p>
+                  52 places reported waterlogged in the 2024–26 rainy seasons are already on the map, each linked to its news report.
+                  Knee-deep water turns back motorcycles and CNGs; waist-deep water turns back cars too.
+                </p>
+                <a href="#docs/weather">Weather and waterlogging</a>
+              </div>
+              <div className="docs-highlight">
+                <h3>Congestion that builds up by itself</h3>
+                <p>
+                  Nobody paints a road red. Every car, bus and rickshaw has its own trip and reacts to the vehicles around it, so jams
+                  form, spread and clear the way they do on real streets.
+                </p>
+                <a href="#docs/what">What this is</a>
+              </div>
+              <div className="docs-highlight">
+                <h3>Change roads while it runs</h3>
+                <p>
+                  Close a lane, retime a signal or flood a junction and watch traffic react within seconds. Bigger changes, such as a new
+                  U-turn in the median or a no-right-turn rule, restart on the rebuilt road network in about a second.
+                </p>
+                <a href="#docs/edits">Changing the roads</a>
+              </div>
+              <div className="docs-highlight">
+                <h3>Put what you know on the map</h3>
+                <p>
+                  Bus stops that block the kerb lane, rickshaw stands, mid-block crossings, markets and schools that draw crowds. The
+                  things that make a Dhaka street slow can all be placed and tuned.
+                </p>
+                <a href="#docs/edits">Things you place on the map</a>
+              </div>
+              <div className="docs-highlight">
+                <h3>Nothing to install</h3>
+                <p>
+                  It runs in the browser on free, open data: OpenStreetMap roads and SUMO, the open-source simulator used by researchers
+                  and cities worldwide. Share the link and anyone can try a scenario.
+                </p>
+                <a href="#docs/sources">Sources and credits</a>
+              </div>
+              <div className="docs-highlight">
+                <h3>Honest about what it can't do</h3>
+                <p>
+                  The volumes are informed estimates, not measurements, and this page says so. Use it to compare options side by side;
+                  every rule it uses is written down below.
+                </p>
+                <a href="#docs/limits">Limitations</a>
+              </div>
+            </div>
+          </section>
+
+          <section id="features">
+            <h2>Everything it can do</h2>
+            <div className="docs-table-wrap">
+              <table className="docs-table docs-features">
+                <tbody>
+                  <tr>
+                    <th scope="row">
+                      <a href="#docs/use">Areas</a>
+                    </th>
+                    <td>
+                      The whole city (main roads, about 1,500 km) or a 3 × 3 km neighbourhood with every street
+                      {neighbourhoods.length > 0 && <>: {neighbourhoods.map((a) => a.name.split(' – ')[0]).join(', ')}</>}. Left-hand traffic throughout.
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">
+                      <a href="#docs/method">Time of day</a>
+                    </th>
+                    <td>
+                      {presets.length > 0 ? `${presets.length} presets` : 'Presets'} from morning rush to night-time trucks, each with its
+                      own traffic volume, vehicle mix and share of through traffic. Fine-tune volume and mix with sliders while it runs.
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">
+                      <a href="#docs/method">Vehicles</a>
+                    </th>
+                    <td>
+                      Cars, buses, CNGs, battery rickshaws, pedal rickshaws, motorcycles and trucks, each with its own size, speed and
+                      driving style, drawn to scale on the map.
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">
+                      <a href="#docs/method">Driving behaviour</a>
+                    </th>
+                    <td>
+                      Lane-free weaving, Dhaka-style gap-taking, rickshaws on main roads, drivers re-planning around traffic every 2 or 5
+                      minutes, and how long a stuck vehicle waits before it is removed.
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">
+                      <a href="#docs/edits">Live road changes</a>
+                    </th>
+                    <td>
+                      Close a road, one direction or single lanes, all day or between two times. Retime signals as actuated, fixed time
+                      or off.
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">
+                      <a href="#docs/edits">Layout changes</a>
+                    </th>
+                    <td>
+                      Add mid-block U-turns, restrict turns at a junction, allow or ban U-turns, and add new traffic signals. Closures and
+                      timings carry over to the new layout.
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">
+                      <a href="#docs/edits">On the map</a>
+                    </th>
+                    <td>Bus stops, rickshaw and CNG stands, pedestrian crossings, hot zones and waterlogging zones.</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">
+                      <a href="#docs/weather">Weather and incidents</a>
+                    </th>
+                    <td>
+                      Light or heavy rain, flooding at three depths, random breakdowns, and fewer trips starting when roads are slow.
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">
+                      <a href="#docs/results">Results</a>
+                    </th>
+                    <td>
+                      Roads coloured by congestion, eight live numbers from average speed to delay and throughput, charts over time, and
+                      details for any road, vehicle or signal on hover.
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">
+                      <a href="#docs/use">Speed</a>
+                    </th>
+                    <td>Pause, or run at 1×, 2×, 5×, 10× or as fast as the computer allows.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
 
           <section id="what">
             <h2>What this is</h2>

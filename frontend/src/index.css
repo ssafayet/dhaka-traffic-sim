@@ -1103,8 +1103,88 @@ input.text {
   display: inline-block;
   margin-right: 4px;
 }
+.docs-stats {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: -8px 0 32px !important;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.docs-stats li {
+  margin: 0 !important;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+}
+.docs-stats strong {
+  display: block;
+  font-size: 22px;
+  line-height: 1.2;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.docs-highlights {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.docs-highlight {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--accent);
+  font-size: 14px;
+}
+.docs-highlight h3 {
+  margin: 0 0 6px !important;
+  font-size: 15px;
+}
+.docs-highlight p {
+  flex: 1;
+  color: var(--text-secondary);
+  margin: 0 0 8px !important;
+}
+.docs-highlight a {
+  font-size: 13px;
+  font-weight: 550;
+  text-decoration: none;
+}
+.docs-highlight a::after {
+  content: ' →';
+}
+.docs-features tbody th {
+  width: 160px;
+  white-space: nowrap;
+}
+.docs-features tbody th a {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.docs-features tbody th a:hover {
+  color: var(--accent);
+}
+.docs-features td {
+  font-variant-numeric: normal;
+}
 
 @media (max-width: 760px) {
+  .docs-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+  .docs-highlights {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .docs-features tbody th {
+    width: auto;
+    white-space: normal;
+  }
   .docs-body {
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
