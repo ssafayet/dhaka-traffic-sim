@@ -1,0 +1,20 @@
+# Python
+backend/.venv/
+__pycache__/
+.pytest_cache/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Generated simulation areas (rebuild with `uv run traffic-sim-prepare --all`)
+backend/data/areas/
+
+.DS_Store
+
+# Secrets / local config
+.env
+.env.*
+!.env.example
+*.pem
+*.key
