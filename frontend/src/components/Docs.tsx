@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import { CONGESTION, vehicleColor, type Theme } from '../lib/palette'
+import { SOURCE_URL } from '../lib/project'
 import type { Area, Preset, VehicleType } from '../lib/types'
 
 /** Plain-language guide for planners and the public, at #docs. */
@@ -749,6 +750,10 @@ export default function Docs() {
           <section id="sources">
             <h2>Sources and credits</h2>
             <ul>
+              <li>
+                Dhaka Traffic Sim by SSafayet. Open source under the GNU AGPL-3.0:{' '}
+                <a href={SOURCE_URL}>source code on GitHub</a>.
+              </li>
               <li>
                 Road data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>, available under the Open
                 Database Licence.

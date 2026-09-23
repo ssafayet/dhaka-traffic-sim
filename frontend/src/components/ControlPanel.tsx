@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import type { Area, Demand, Preset, SimOptions, SimState, VehicleType } from '../lib/types'
 import { vehicleColor, type Theme } from '../lib/palette'
+import { SOURCE_URL } from '../lib/project'
 
 interface Props {
   theme: Theme
@@ -76,6 +77,10 @@ export function ControlPanel(p: Props) {
         <a className="docs-link" href="#docs" target="_blank" rel="noopener">
           How it works and how to use it
         </a>
+        {/* Author credit: keep it, per the notice in NOTICE (AGPL-3.0 section 7(b)). */}
+        <p className="credit">
+          By SSafayet · <a href={SOURCE_URL}>Source code</a> (AGPL-3.0)
+        </p>
       </header>
 
       <section>

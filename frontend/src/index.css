@@ -902,6 +902,12 @@ input.text {
   font-size: 12px;
   color: var(--accent);
 }
+.brand .credit {
+  margin-top: 4px;
+}
+.brand .credit a {
+  color: inherit;
+}
 
 #root:has(.docs) {
   height: auto;

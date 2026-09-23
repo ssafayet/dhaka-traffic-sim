@@ -194,3 +194,16 @@ treat them as forecasts. Calibrating against real vehicle counts is Phase 4.
 cd backend && uv run pytest     # runs real SUMO simulations over the WebSocket
 cd frontend && npx tsc -b && npm run lint
 ```
+
+## Contributing
+
+Contributions are welcome, especially local knowledge and real traffic data. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for how to submit changes and
+[DEVELOPMENT.md](DEVELOPMENT.md) for how the code fits together.
+
+## License
+
+Copyright (C) 2026 SSafayet. Licensed under the [GNU AGPL-3.0](LICENSE), with an
+attribution term (see [NOTICE](NOTICE)): copies and modified versions, including
+hosted ones, must keep the "By SSafayet" credit and source link in the UI, and must
+offer their users the source code.
