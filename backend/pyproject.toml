@@ -1,0 +1,29 @@
+[project]
+name = "traffic-sim"
+version = "0.1.0"
+description = "SUMO-backed traffic simulator for Dhaka (and any OSM city)"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "eclipse-sumo>=1.27.1",
+    "fastapi>=0.141.1",
+    "numpy>=2.5.3",
+    "pyproj>=3.8.0",
+    "sumolib>=1.27.1",
+    "traci>=1.27.1",
+    "uvicorn[standard]>=0.53.0",
+]
+
+[project.scripts]
+traffic-sim-prepare = "traffic_sim.prepare:main"
+traffic-sim-server = "traffic_sim.server:main"
+
+[build-system]
+requires = ["uv_build>=0.12.17,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+]
