@@ -1,4 +1,4 @@
-import type { VehicleType } from '../lib/types'
+import type { RoadFeatures, VehicleType } from '../lib/types'
 import { CONGESTION, vehicleColor, type Theme } from '../lib/palette'
 import type { ColorMode } from './MapView'
 
@@ -9,7 +9,16 @@ interface Props {
   onColorMode: (m: ColorMode) => void
   showCongestion: boolean
   onShowCongestion: (v: boolean) => void
+  features: RoadFeatures
 }
+
+const FEATURE_KEYS = [
+  { key: 'bus_stops', label: 'Bus stop', cls: 'fk-bus' },
+  { key: 'stands', label: 'Rickshaw / CNG stand', cls: 'fk-stand' },
+  { key: 'crossings', label: 'Crossing (yellow: people crossing)', cls: 'fk-crossing' },
+  { key: 'hot_zones', label: 'Hot zone', cls: 'fk-hot' },
+  { key: 'water', label: 'Waterlogging (filled: flooded)', cls: 'fk-water' },
+] as const
 
 export function Legend(p: Props) {
   return (
@@ -57,6 +66,19 @@ export function Legend(p: Props) {
               ))}
         </ul>
       </div>
+      {FEATURE_KEYS.some((k) => p.features[k.key].length) && (
+        <div className="legend-group">
+          <div className="legend-title">On the map</div>
+          <ul>
+            {FEATURE_KEYS.filter((k) => p.features[k.key].length).map((k) => (
+              <li key={k.key}>
+                <span className={`feature-key ${k.cls}`} aria-hidden />
+                {k.label}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }

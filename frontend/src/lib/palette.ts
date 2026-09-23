@@ -57,3 +57,22 @@ export const MAP_STYLE: Record<Theme, string> = {
   light: 'https://tiles.openfreemap.org/styles/positron',
   dark: 'https://tiles.openfreemap.org/styles/dark',
 }
+
+// Road editor. Closed roads are drawn in the ink colour (black / white) so they
+// never read as a congestion level; markers use the status reds and ambers.
+export const EDIT_RGBA = {
+  accent: { light: hex('#2a78d6'), dark: hex('#3987e5') } as Record<Theme, RGBA>,
+  closed: { light: hex('#0b0b0b', 230), dark: hex('#ffffff', 230) } as Record<Theme, RGBA>,
+  closedMarker: hex('#d03b3b'),
+  laneMarker: hex('#fab219'),
+  markerStroke: { light: hex('#ffffff'), dark: hex('#0d0d0d') } as Record<Theme, RGBA>,
+  junction: { light: hex('#fcfcfb', 230), dark: hex('#1a1a19', 230) } as Record<Theme, RGBA>,
+  junctionStroke: { light: hex('#52514e'), dark: hex('#c3c2b7') } as Record<Theme, RGBA>,
+}
+
+export const SIGNAL_RGBA: Record<'green' | 'amber' | 'red' | 'off', RGBA> = {
+  green: hex('#0ca30c'),
+  amber: hex('#fab219'),
+  red: hex('#d03b3b'),
+  off: hex('#898781'),
+}

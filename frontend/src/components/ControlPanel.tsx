@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { Area, Demand, Preset, SimOptions, SimState, VehicleType } from '../lib/types'
 import { vehicleColor, type Theme } from '../lib/palette'
 
@@ -22,6 +23,8 @@ interface Props {
   onSpeed: (s: number) => void
   onStart: () => void
   onPauseToggle: () => void
+  /** Extra sections, shown above the transport controls. */
+  children?: ReactNode
 }
 
 const SPEEDS = [
@@ -30,6 +33,12 @@ const SPEEDS = [
   { value: 5, label: '5×' },
   { value: 10, label: '10×' },
   { value: 0, label: 'Max' },
+]
+
+const REROUTE = [
+  { value: 0, label: 'never (keep the first route)' },
+  { value: 120, label: 'every 2 minutes' },
+  { value: 300, label: 'every 5 minutes' },
 ]
 
 const TELEPORT = [
@@ -63,6 +72,10 @@ export function ControlPanel(p: Props) {
       <header className="brand">
         <h1>Dhaka Traffic Sim</h1>
         <p>Simulated with SUMO on OpenStreetMap roads.</p>
+        {/* A new tab, so a running simulation and its road edits survive. */}
+        <a className="docs-link" href="#docs" target="_blank" rel="noopener">
+          How it works and how to use it
+        </a>
       </header>
 
       <section>
@@ -219,6 +232,17 @@ export function ControlPanel(p: Props) {
           </span>
         </label>
         <label className="field">
+          <span className="field-label">Drivers re-plan around traffic</span>
+          <select value={p.options.reroute_every} onChange={(e) => p.onOptions({ ...p.options, reroute_every: Number(e.target.value) })}>
+            {REROUTE.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+          {p.options.reroute_every > 0 && isCity && <span className="notice small">Slower to simulate at whole-city scale.</span>}
+        </label>
+        <label className="field">
           <span className="field-label">Remove stuck vehicles</span>
           <select
             value={p.options.teleport_after}
@@ -232,6 +256,8 @@ export function ControlPanel(p: Props) {
           </select>
         </label>
       </section>
+
+      {p.children}
 
       <section className="transport">
         <div className="speed" role="radiogroup" aria-label="Simulation speed">
