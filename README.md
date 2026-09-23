@@ -81,6 +81,10 @@ PORT=80 TRAFFIC_SIM_MAX_SIMS=8 docker compose up -d
 
 ## How it works
 
+A plain-language guide for people using the simulator (what it models, how to read the
+results, its limitations) is built into the app: open *How it works and how to use it*
+in the side panel, or go to `/#docs`.
+
 ```
 backend/src/traffic_sim/
   prepare.py   OSM download (Overpass) → netconvert → network.geojson for the map
@@ -89,11 +93,60 @@ backend/src/traffic_sim/
                local trips start/end on streets weighted by lane-km
   engine.py    One SUMO run over TraCI: injects vehicles, steps, collects stats
   presets.py   Time-of-day scenarios (morning rush, Friday, night trucks…)
-  server.py    FastAPI: REST for areas/presets, WebSocket streaming frames
+  scenario.py  Road edits: validates closures and signal plans, builds edited
+               networks (U-turns, turn rules, added signals) with netconvert
+  features.py  Bus stops, stands, crossings, hot zones, waterlogging, weather
+  server.py    FastAPI: REST for areas/presets/road layouts, WebSocket streaming frames
 frontend/src/
   lib/vehicleStore.ts   Interpolates between server frames so vehicles move at 60 fps
   components/MapView    MapLibre base map + deck.gl roads and to-scale vehicles
+  components/Inspector  Road editor: closures, U-turns, signal timings
 ```
+
+### Editing roads
+
+Turn on **Edit roads on the map** in the side panel, then click a road, junction or
+signal. There are two kinds of change:
+
+- **Live**, applied to the running simulation over TraCI:
+  - Closing a road, one direction of a two-way street, or single lanes (lane 1 is
+    the kerb side). Vehicles heading for a closed road are rerouted. Vehicles
+    with no other way to their destination queue at the closure, and the map
+    tells you how many.
+  - Traffic signal timings: *actuated* (a green stretches between a minimum and
+    a maximum while traffic keeps arriving), *fixed time* (set durations), or
+    *off* (drivers fall back to the junction's right of way). Which movements
+    get green in each phase comes from the network.
+- **Road features and weather**, also live, placed with the tools above the map:
+  - Bus stops (buses stop in the kerb lane), rickshaw and CNG stands (vehicles
+    parked at the kerb plus pickups), pedestrian crossing spots (people hold up
+    every lane now and then), hot zones (more trips, kerbside stops, vendors,
+    crowds) and waterlogging zones (ankle-, knee- or waist-deep).
+  - Rain (slower, bigger gaps), flooding, random breakdowns, drivers
+    re-planning around traffic (a restart option), and fewer trips starting when
+    delays grow.
+  - Timed closures (between two times of day) for events, VIP movements and
+    accidents.
+
+  The default waterlogging zones are 52 places reported flooded in 2024–26 news
+  reports (`backend/src/traffic_sim/waterlogging.json`, with sources). Bus stops
+  start from OpenStreetMap. See `features.py`.
+- **Layout**, which needs a rebuilt network and restarts the simulation:
+  - Mid-block U-turns. Dhaka's main roads are mapped as two one-way
+    carriageways, so a U-turn opens a gap in the median between them. On an
+    undivided street, vehicles turn around at the chosen point.
+  - Allowing or banning U-turns at a junction.
+  - Turn rules at a junction: *straight and left only* (no right turns or
+    U-turns) or *left only*. A crossing of divided roads is mapped as several
+    junctions a few metres apart; the rule merges them into one junction and
+    covers the whole crossing.
+  - Adding a traffic signal. It starts with an actuated plan that you can tune
+    once the layout is applied.
+
+  The server applies layout edits to the area's prepared network with netconvert
+  (under a second for a neighbourhood), under `backend/data/variants/`. Edits are
+  always relative to the unedited area, and identical edits reuse the same
+  network. Closures and signal timings carry over to the new layout.
 
 Choices that are specific to Dhaka:
 
