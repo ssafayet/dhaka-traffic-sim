@@ -979,6 +979,13 @@ input.text {
   font-size: 15px;
   line-height: 1.6;
 }
+.docs-banner {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 0 0 24px;
+}
 .docs-article h1 {
   font-size: 28px;
   line-height: 1.25;

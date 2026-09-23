@@ -1,3 +1,5 @@
+![Dhaka Traffic Sim](frontend/public/banner.png)
+
 # Dhaka Traffic Sim
 
 A web app for trying out traffic conditions on real Dhaka roads. Pick the whole city

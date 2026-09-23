@@ -91,6 +91,13 @@ export default function Docs() {
         </nav>
 
         <article className="docs-article">
+          <img
+            className="docs-banner"
+            src="/banner.png"
+            alt="Dhaka Traffic Sim: a dark map of central Dhaka with roads coloured by congestion"
+            width={2169}
+            height={725}
+          />
           <h1>Dhaka Traffic Sim: how it works and how to use it</h1>
           <p className="docs-lead">
             A what-if tool for Dhaka's streets. It simulates individual cars, buses, CNGs, rickshaws and motorcycles on the city's real
