@@ -1,0 +1,19 @@
+services:
+  traffic-sim:
+    build: .
+    image: traffic-sim
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      # Each browser tab runs its own SUMO process. A whole-city rush-hour run
+      # uses about one CPU core; size this to the server.
+      TRAFFIC_SIM_MAX_SIMS: "${TRAFFIC_SIM_MAX_SIMS:-4}"
+      PREPARE_AREAS: "${PREPARE_AREAS:-missing}"
+    volumes:
+      # Built road networks. Seeded from the image on first run; areas built
+      # at startup are kept here across restarts and image upgrades.
+      - areas:/app/backend/data/areas
+    restart: unless-stopped
+
+volumes:
+  areas:
