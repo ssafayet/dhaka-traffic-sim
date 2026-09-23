@@ -1,0 +1,657 @@
+{
+ "about": "Places reported waterlogged in Dhaka after heavy rain in the 2024-2026 monsoons, from news reports. Positions are approximate (neighbourhood or intersection level); depth is the worst reported. Defaults for the simulator's waterlogging zones; users can edit, remove or add their own.",
+ "sources": {
+  "DS24": {
+   "outlet": "The Daily Star",
+   "date": "2024-07-12",
+   "title": "Parts of Dhaka, including thoroughfares, waterlogged after 'very heavy' morning rain",
+   "url": "https://www.thedailystar.net/environment/weather/news/parts-dhaka-including-thoroughfares-waterlogged-after-very-heavy-morning-rain-3655066"
+  },
+  "DT25": {
+   "outlet": "Dhaka Tribune",
+   "date": "2025-09-22",
+   "title": "Overnight downpour floods Dhaka, commuters struggle through gridlocks",
+   "url": "https://www.dhakatribune.com/bangladesh/dhaka/392098/persistent-rainfall-submerges-dhaka-streets"
+  },
+  "PA25": {
+   "outlet": "Prothom Alo",
+   "date": "2025-09-22",
+   "title": "Heavy rain since morning leads to waterlogging in Dhaka streets",
+   "url": "https://en.prothomalo.com/bangladesh/city/uclhk1b76t"
+  },
+  "PA26": {
+   "outlet": "Prothom Alo",
+   "date": "2026-05-01",
+   "title": "Heavy downpour at dawn leaves roads waterlogged across Dhaka",
+   "url": "https://en.prothomalo.com/bangladesh/city/iwjax7z6hw"
+  },
+  "DS26": {
+   "outlet": "The Daily Star",
+   "date": "2026-05-10",
+   "title": "141 Dhaka spots at risk of waterlogging",
+   "url": "https://www.thedailystar.net/news/bangladesh/news/141-dhaka-spots-risk-waterlogging-4171926"
+  },
+  "DT26": {
+   "outlet": "Dhaka Tribune",
+   "date": "2026-07-14",
+   "title": "Why Dhaka keeps flooding after every heavy rain",
+   "url": "https://www.dhakatribune.com/bangladesh/dhaka/415068/why-dhaka-keeps-flooding-after-every-heavy-rain"
+  },
+  "TBS26": {
+   "outlet": "The Business Standard",
+   "date": "2026-09-20",
+   "title": "Dhaka streets waterlogged after downpour, commuters suffer",
+   "url": "https://www.tbsnews.net/bangladesh/heavy-rain-floods-parts-capital-causing-widespread-suffering-1547816"
+  }
+ },
+ "spots": [
+  {
+   "id": "w1",
+   "name": "Fakirapool",
+   "lon": 90.4172,
+   "lat": 23.73312,
+   "radius": 250,
+   "depth": "deep",
+   "sources": [
+    "DS24",
+    "PA25",
+    "DT26",
+    "TBS26",
+    "DS26"
+   ]
+  },
+  {
+   "id": "w2",
+   "name": "Kakrail",
+   "lon": 90.4085,
+   "lat": 23.737,
+   "radius": 250,
+   "depth": "deep",
+   "sources": [
+    "DT25",
+    "PA25",
+    "TBS26"
+   ]
+  },
+  {
+   "id": "w3",
+   "name": "Malibagh and Malibagh Railgate",
+   "lon": 90.41377,
+   "lat": 23.74707,
+   "radius": 300,
+   "depth": "deep",
+   "sources": [
+    "DT25",
+    "PA25",
+    "PA26",
+    "DT26",
+    "TBS26"
+   ]
+  },
+  {
+   "id": "w4",
+   "name": "Rajarbagh",
+   "lon": 90.41758,
+   "lat": 23.73826,
+   "radius": 250,
+   "depth": "deep",
+   "sources": [
+    "PA25",
+    "TBS26",
+    "DS26"
+   ]
+  },
+  {
+   "id": "w5",
+   "name": "Motijheel (Shapla Chattar)",
+   "lon": 90.4196,
+   "lat": 23.727,
+   "radius": 300,
+   "depth": "deep",
+   "sources": [
+    "PA25",
+    "DT26",
+    "TBS26"
+   ]
+  },
+  {
+   "id": "w6",
+   "name": "Arambagh",
+   "lon": 90.4212,
+   "lat": 23.73084,
+   "radius": 200,
+   "depth": "deep",
+   "sources": [
+    "DS24",
+    "TBS26"
+   ]
+  },
+  {
+   "id": "w7",
+   "name": "Green Road",
+   "lon": 90.38521,
+   "lat": 23.74581,
+   "radius": 300,
+   "depth": "knee",
+   "sources": [
+    "PA25",
+    "PA26",
+    "DT26",
+    "TBS26"
+   ]
+  },
+  {
+   "id": "w8",
+   "name": "East Rajabazar",
+   "lon": 90.38694,
+   "lat": 23.7581,
+   "radius": 200,
+   "depth": "knee",
+   "sources": [
+    "DS24",
+    "DT25"
+   ]
+  },
+  {
+   "id": "w9",
+   "name": "Senpara Parbata, Mirpur",
+   "lon": 90.37861,
+   "lat": 23.8022,
+   "radius": 200,
+   "depth": "knee",
+   "sources": [
+    "DS24"
+   ]
+  },
+  {
+   "id": "w10",
+   "name": "West Tejturi Bazar",
+   "lon": 90.39251,
+   "lat": 23.75711,
+   "radius": 200,
+   "depth": "knee",
+   "sources": [
+    "PA25",
+    "PA26"
+   ]
+  },
+  {
+   "id": "w11",
+   "name": "Naya Paltan",
+   "lon": 90.41297,
+   "lat": 23.73259,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "DS24"
+   ]
+  },
+  {
+   "id": "w12",
+   "name": "Baitul Mukarram",
+   "lon": 90.41262,
+   "lat": 23.72947,
+   "radius": 150,
+   "depth": "shallow",
+   "sources": [
+    "DS24"
+   ]
+  },
+  {
+   "id": "w13",
+   "name": "Shantinagar",
+   "lon": 90.41179,
+   "lat": 23.74172,
+   "radius": 250,
+   "depth": "shallow",
+   "sources": [
+    "DS24",
+    "DT25"
+   ]
+  },
+  {
+   "id": "w14",
+   "name": "New Market and Nilkhet",
+   "lon": 90.38331,
+   "lat": 23.73292,
+   "radius": 300,
+   "depth": "shallow",
+   "sources": [
+    "DS24",
+    "PA25",
+    "DT26",
+    "TBS26",
+    "DS26"
+   ]
+  },
+  {
+   "id": "w15",
+   "name": "NAEM Road",
+   "lon": 90.38145,
+   "lat": 23.73573,
+   "radius": 150,
+   "depth": "shallow",
+   "sources": [
+    "TBS26"
+   ]
+  },
+  {
+   "id": "w16",
+   "name": "Bijoy Sarani",
+   "lon": 90.3905,
+   "lat": 23.7655,
+   "radius": 250,
+   "depth": "shallow",
+   "sources": [
+    "DS24",
+    "DT25"
+   ]
+  },
+  {
+   "id": "w17",
+   "name": "Dhanmondi 27",
+   "lon": 90.374,
+   "lat": 23.7548,
+   "radius": 250,
+   "depth": "shallow",
+   "sources": [
+    "DT25"
+   ]
+  },
+  {
+   "id": "w18",
+   "name": "Road beside Rabindra Sarobar, Dhanmondi",
+   "lon": 90.378,
+   "lat": 23.7465,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "PA25",
+    "PA26"
+   ]
+  },
+  {
+   "id": "w19",
+   "name": "Karwan Bazar",
+   "lon": 90.39278,
+   "lat": 23.75127,
+   "radius": 250,
+   "depth": "shallow",
+   "sources": [
+    "DS24",
+    "PA25",
+    "PA26"
+   ]
+  },
+  {
+   "id": "w20",
+   "name": "Farmgate",
+   "lon": 90.38711,
+   "lat": 23.75904,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "DS24"
+   ]
+  },
+  {
+   "id": "w21",
+   "name": "Green Road–Panthapath signal",
+   "lon": 90.39008,
+   "lat": 23.75054,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "PA26"
+   ]
+  },
+  {
+   "id": "w22",
+   "name": "Indira Road",
+   "lon": 90.38317,
+   "lat": 23.75593,
+   "radius": 150,
+   "depth": "shallow",
+   "sources": [
+    "DS24"
+   ]
+  },
+  {
+   "id": "w23",
+   "name": "Kalabagan",
+   "lon": 90.3792,
+   "lat": 23.74872,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "PA25"
+   ]
+  },
+  {
+   "id": "w24",
+   "name": "Jigatola",
+   "lon": 90.37205,
+   "lat": 23.74032,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "PA25",
+    "PA26"
+   ]
+  },
+  {
+   "id": "w25",
+   "name": "Asad Gate",
+   "lon": 90.37272,
+   "lat": 23.76013,
+   "radius": 150,
+   "depth": "shallow",
+   "sources": [
+    "PA25"
+   ]
+  },
+  {
+   "id": "w26",
+   "name": "Elephant Road",
+   "lon": 90.3868,
+   "lat": 23.739,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "DS24"
+   ]
+  },
+  {
+   "id": "w27",
+   "name": "Matsya Bhaban",
+   "lon": 90.402,
+   "lat": 23.734,
+   "radius": 150,
+   "depth": "shallow",
+   "sources": [
+    "DS24"
+   ]
+  },
+  {
+   "id": "w28",
+   "name": "Kazipara",
+   "lon": 90.37199,
+   "lat": 23.79924,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "PA26",
+    "DT26"
+   ]
+  },
+  {
+   "id": "w29",
+   "name": "West Shewrapara",
+   "lon": 90.37551,
+   "lat": 23.79096,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "PA26",
+    "DT26"
+   ]
+  },
+  {
+   "id": "w30",
+   "name": "Mirpur 10",
+   "lon": 90.36826,
+   "lat": 23.80836,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "PA26"
+   ]
+  },
+  {
+   "id": "w31",
+   "name": "Mirpur Mazar Road",
+   "lon": 90.34857,
+   "lat": 23.79188,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "DS24"
+   ]
+  },
+  {
+   "id": "w32",
+   "name": "Agargaon",
+   "lon": 90.38005,
+   "lat": 23.77843,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "DT26"
+   ]
+  },
+  {
+   "id": "w33",
+   "name": "Kalshi",
+   "lon": 90.3717,
+   "lat": 23.823,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "DT26"
+   ]
+  },
+  {
+   "id": "w34",
+   "name": "Mouchak",
+   "lon": 90.4125,
+   "lat": 23.7463,
+   "radius": 150,
+   "depth": "shallow",
+   "sources": [
+    "PA26"
+   ]
+  },
+  {
+   "id": "w35",
+   "name": "Moghbazar",
+   "lon": 90.4057,
+   "lat": 23.7489,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "PA26",
+    "DT26"
+   ]
+  },
+  {
+   "id": "w36",
+   "name": "Iskaton",
+   "lon": 90.4,
+   "lat": 23.7445,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "DT26"
+   ]
+  },
+  {
+   "id": "w37",
+   "name": "Madhubagh, Hatirjheel",
+   "lon": 90.41039,
+   "lat": 23.75682,
+   "radius": 150,
+   "depth": "shallow",
+   "sources": [
+    "PA26"
+   ]
+  },
+  {
+   "id": "w38",
+   "name": "Rampura",
+   "lon": 90.4215,
+   "lat": 23.764,
+   "radius": 250,
+   "depth": "shallow",
+   "sources": [
+    "DT25"
+   ]
+  },
+  {
+   "id": "w39",
+   "name": "Mohakhali",
+   "lon": 90.40832,
+   "lat": 23.77999,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "DT26"
+   ]
+  },
+  {
+   "id": "w40",
+   "name": "Pragati Sarani (Nadda)",
+   "lon": 90.42107,
+   "lat": 23.81381,
+   "radius": 250,
+   "depth": "shallow",
+   "sources": [
+    "DS24"
+   ]
+  },
+  {
+   "id": "w41",
+   "name": "Khilgaon",
+   "lon": 90.42328,
+   "lat": 23.75065,
+   "radius": 250,
+   "depth": "shallow",
+   "sources": [
+    "DT26",
+    "TBS26"
+   ]
+  },
+  {
+   "id": "w42",
+   "name": "Goran",
+   "lon": 90.43363,
+   "lat": 23.74785,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "TBS26"
+   ]
+  },
+  {
+   "id": "w43",
+   "name": "Sabujbagh",
+   "lon": 90.42968,
+   "lat": 23.73875,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "TBS26"
+   ]
+  },
+  {
+   "id": "w44",
+   "name": "Mugda",
+   "lon": 90.43357,
+   "lat": 23.72912,
+   "radius": 250,
+   "depth": "shallow",
+   "sources": [
+    "TBS26"
+   ]
+  },
+  {
+   "id": "w45",
+   "name": "Maniknagar",
+   "lon": 90.43287,
+   "lat": 23.72315,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "TBS26"
+   ]
+  },
+  {
+   "id": "w46",
+   "name": "Kamalapur",
+   "lon": 90.42534,
+   "lat": 23.73187,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "DT26"
+   ]
+  },
+  {
+   "id": "w47",
+   "name": "Gulistan",
+   "lon": 90.41208,
+   "lat": 23.7249,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "TBS26"
+   ]
+  },
+  {
+   "id": "w48",
+   "name": "Bakshibazar and Education Board",
+   "lon": 90.39552,
+   "lat": 23.7223,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "TBS26",
+    "DS26"
+   ]
+  },
+  {
+   "id": "w49",
+   "name": "Nimtali",
+   "lon": 90.40187,
+   "lat": 23.72346,
+   "radius": 150,
+   "depth": "shallow",
+   "sources": [
+    "DS24"
+   ]
+  },
+  {
+   "id": "w50",
+   "name": "Bangshal",
+   "lon": 90.40752,
+   "lat": 23.71565,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "DS24"
+   ]
+  },
+  {
+   "id": "w51",
+   "name": "Sayedabad bus terminal",
+   "lon": 90.42754,
+   "lat": 23.71535,
+   "radius": 200,
+   "depth": "shallow",
+   "sources": [
+    "DS24",
+    "DT26"
+   ]
+  },
+  {
+   "id": "w52",
+   "name": "Dayaganj intersection",
+   "lon": 90.42464,
+   "lat": 23.71044,
+   "radius": 150,
+   "depth": "shallow",
+   "sources": [
+    "DS24"
+   ]
+  }
+ ]
+}
