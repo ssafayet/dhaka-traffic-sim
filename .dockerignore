@@ -8,5 +8,6 @@ frontend/node_modules
 frontend/dist
 # Raw OSM downloads are only needed to rebuild networks, not to run them.
 backend/data/areas/*/map.osm
+backend/data/variants
 **/.env
 **/.env.*

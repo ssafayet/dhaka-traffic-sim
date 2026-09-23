@@ -9,6 +9,8 @@ frontend/dist/
 
 # Generated simulation areas (rebuild with `uv run traffic-sim-prepare --all`)
 backend/data/areas/
+# Road networks built from user layout edits (U-turns, added signals)
+backend/data/variants/
 
 .DS_Store
 
