@@ -14,6 +14,7 @@ import sys
 import time
 import urllib.parse
 import urllib.request
+from collections.abc import Callable
 from pathlib import Path
 
 import sumolib
@@ -116,7 +117,8 @@ def build_net(osm_file: Path, net_file: Path, bbox: tuple) -> None:
     subprocess.run(cmd, check=True)
 
 
-def build_geojson(net_file: Path, out: Path) -> dict:
+def build_geojson(net_file: Path, out: Path, extra_props: Callable[[object], dict] | None = None) -> dict:
+    """Roads for the map. `extra_props(edge)` adds or overrides feature properties."""
     net = sumolib.net.readNet(str(net_file), withInternal=False)
     proj = NetProjection.from_net_file(net_file)
     features = []
@@ -145,6 +147,7 @@ def build_geojson(net_file: Path, out: Path) -> dict:
                     # Rickshaws are banned here unless "allowed on main roads" is on.
                     "main": not edge.allows("bicycle") and edge.allows("moped"),
                     "length": round(edge.getLength(), 1),
+                    **(extra_props(edge) if extra_props else {}),
                 },
                 "geometry": {
                     "type": "LineString",
@@ -176,6 +179,10 @@ def prepare_area(
         download_osm(bbox, osm_file, detail)
     build_net(osm_file, net_file, bbox)
     stats = build_geojson(net_file, area_dir / "network.geojson")
+    # Kept apart from map.osm, which deployments leave out.
+    from .features import _osm_bus_stops
+
+    (area_dir / "bus_stops.json").write_text(json.dumps(_osm_bus_stops(area_dir), ensure_ascii=False))
 
     west, south, east, north = bbox
     meta = {

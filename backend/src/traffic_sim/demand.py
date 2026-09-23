@@ -161,15 +161,15 @@ class EdgePools:
         pools = cls(edges, vclass, bbox) if edges else None
         return pools if pools and pools.origins and pools.dests else None
 
-    def origin(self, rng: random.Random, through: bool) -> str:
+    def origin(self, rng: random.Random, through: bool, weights: list[float] | None = None) -> str:
         if through and self.sources:
             return rng.choices(self.sources, self.sources_w)[0]
-        return rng.choices(self.origins, self.origins_w)[0]
+        return rng.choices(self.origins, weights or self.origins_w)[0]
 
-    def destination(self, rng: random.Random, through: bool) -> str:
+    def destination(self, rng: random.Random, through: bool, weights: list[float] | None = None) -> str:
         if through and self.sinks:
             return rng.choices(self.sinks, self.sinks_w)[0]
-        return rng.choices(self.dests, self.dests_w)[0]
+        return rng.choices(self.dests, weights or self.dests_w)[0]
 
 
 class DemandGenerator:
@@ -177,6 +177,19 @@ class DemandGenerator:
         """pools: vehicle type id → where that type can drive (None = nowhere)."""
         self.rng = random.Random(seed)
         self.pools = {k: v for k, v in pools.items() if v is not None}
+        # Per-run weights for local trips (hot zones); the pools are shared.
+        self._weights: dict[str, tuple[list[float], list[float]]] = {}
+
+    def set_edge_weights(self, multiplier: dict[str, float]) -> None:
+        """Make local trips start and end on these edges `multiplier` times as often."""
+        self._weights = {}
+        if not multiplier:
+            return
+        for k, pool in self.pools.items():
+            self._weights[k] = (
+                [w * multiplier.get(e, 1.0) for e, w in zip(pool.origins, pool.origins_w)],
+                [w * multiplier.get(e, 1.0) for e, w in zip(pool.dests, pool.dests_w)],
+            )
 
     def _poisson(self, lam: float) -> int:
         # Knuth; lam is small (vehicles per step per type).
@@ -199,9 +212,10 @@ class DemandGenerator:
             pool = self.pools.get(vtype)
             if pool is None:
                 continue
+            ow, dw = self._weights.get(vtype, (None, None))
             for _ in range(self._poisson(per_step * share)):
                 through = rng.random() < settings.through_share
-                o = pool.origin(rng, through)
-                d = pool.destination(rng, through)
+                o = pool.origin(rng, through, ow)
+                d = pool.destination(rng, through, dw)
                 if o != d:
                     yield vtype, o, d, through

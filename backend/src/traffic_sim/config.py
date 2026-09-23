@@ -4,6 +4,8 @@ from pathlib import Path
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 AREAS_DIR = BACKEND_DIR / "data" / "areas"
+# Networks with user layout edits (U-turns, added signals); see scenario.py.
+VARIANTS_DIR = BACKEND_DIR / "data" / "variants"
 
 # Areas that `traffic-sim-prepare` knows how to build without extra arguments.
 # bbox = (west, south, east, north)

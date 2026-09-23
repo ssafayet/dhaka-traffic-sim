@@ -110,3 +110,19 @@ def test_battery_rickshaws_run_with_main_road_ban():
             raise AssertionError("no battery rickshaws on the road")
         assert msg["stats"]["failed_routes"] == 0
         ws.send_json({"type": "stop"})
+
+
+def test_demand_cap_scales_with_the_area():
+    from traffic_sim.engine import load_area
+    from traffic_sim.server import MAX_VOLUME_FARMGATE, _demand_from, max_volume
+
+    farmgate = load_area("farmgate")
+    assert max_volume(farmgate) == MAX_VOLUME_FARMGATE
+    assert _demand_from({"volume": 1e9}, max_volume(farmgate)).volume == MAX_VOLUME_FARMGATE
+    assert _demand_from({"volume": -5}, max_volume(farmgate)).volume == 0
+    city = AREAS_DIR / "dhaka" / "area.json"
+    if city.exists():
+        # A whole-city rush-hour preset is far above Farmgate's cap.
+        big = max_volume(load_area("dhaka"))
+        assert big > 150_000
+        assert _demand_from({"volume": 158_000}, big).volume == 158_000

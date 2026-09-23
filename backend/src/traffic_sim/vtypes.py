@@ -116,5 +116,28 @@ def vtypes_xml(rickshaws_on_main_roads: bool = True) -> str:
         }
         attr_str = " ".join(f"{k}={quoteattr(str(v))}" for k, v in attrs.items())
         lines.append(f"    <vType {attr_str}/>")
+    lines += special_vtypes()
     lines.append("</additional>")
     return "\n".join(lines) + "\n"
+
+
+# Not traffic: stationary vehicles standing in for parked rickshaws and CNGs,
+# and for people crossing the road (see features.py). They use a vehicle class
+# no real vehicle has, so lane closures still apply to them and nothing else
+# changes. Parked ones keep to the kerb (the left: Bangladesh drives on the left).
+PARKED_PREFIX = "parked_"
+CROWD_TYPE = "crowd"
+SPECIAL_CLASS = "custom1"
+
+
+def special_vtypes() -> list[str]:
+    out = []
+    for vt in VEHICLE_TYPES:
+        if vt.id in ("e_rickshaw", "rickshaw", "cng"):
+            out.append(
+                f'    <vType id="{PARKED_PREFIX}{vt.id}" vClass="{SPECIAL_CLASS}" length="{vt.length}" '
+                f'width="{vt.width}" minGap="0.3" maxSpeed="1" latAlignment="left" color="{vt.color}"/>'
+            )
+    # As wide as a lane, so nothing slips past while people cross.
+    out.append(f'    <vType id="{CROWD_TYPE}" vClass="{SPECIAL_CLASS}" length="2" width="3.2" minGap="0" maxSpeed="1" color="#ffffff"/>')
+    return out
