@@ -1,0 +1,11 @@
+<!-- Loaded after SUMO's osmNetconvert.typ.xml; types listed here replace the defaults.
+
+     Rickshaw access is encoded with two vehicle classes so the main-road rule can
+     be toggled per run without rebuilding the network:
+       moped    rickshaws allowed everywhere except motorways (the elevated expressway)
+       bicycle  rickshaws banned from main roads (trunk and primary, plus their links)
+     SUMO's default already bans bicycles from trunk roads; primary roads are added here. -->
+<types>
+    <type id="highway.primary"      numLanes="2" speed="27.78" priority="12" oneway="false" disallow="rail rail_urban rail_electric rail_fast tram drone aircraft scooter container wheelchair subway cable_car ship pedestrian bicycle"/>
+    <type id="highway.primary_link" numLanes="1" speed="22.22" priority="7"  oneway="false" disallow="rail rail_urban rail_electric rail_fast tram drone aircraft scooter container wheelchair subway cable_car ship pedestrian bicycle"/>
+</types>
