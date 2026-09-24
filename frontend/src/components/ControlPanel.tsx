@@ -48,7 +48,7 @@ const TELEPORT = [
   { value: -1, label: 'never (true gridlock)' },
 ]
 
-// Volume slider range for Farmgate; scaled by each area's demand_scale.
+// Volume slider range for a region's reference area; scaled by each area's demand_scale.
 const VOLUME_MAX = 20000
 const VOLUME_STEP = 250
 
@@ -62,8 +62,17 @@ export function ControlPanel(p: Props) {
   const totalMix = Object.values(p.demand.mix).reduce((a, b) => a + Math.max(0, b), 0) || 1
   const running = p.state === 'running' || p.state === 'paused' || p.state === 'starting'
   const area = p.areas.find((a) => a.id === p.areaId)
-  const cities = p.areas.filter((a) => a.kind === 'city')
-  const neighbourhoods = p.areas.filter((a) => a.kind !== 'city')
+  // One group pair per region, named by city once there is more than one.
+  const regionIds = [...new Set(p.areas.map((a) => a.region))]
+  const groups = regionIds.flatMap((r) => {
+    const inRegion = p.areas.filter((a) => a.region === r)
+    const prefix = regionIds.length > 1 ? `${inRegion[0].city}: ` : ''
+    return [
+      { label: `${prefix}Whole city`, areas: inRegion.filter((a) => a.kind === 'city') },
+      { label: `${prefix}Neighbourhoods (every street)`, areas: inRegion.filter((a) => a.kind !== 'city') },
+    ].filter((g) => g.areas.length > 0)
+  })
+  const neighbourhoods = p.areas.filter((a) => a.kind !== 'city' && a.region === area?.region)
   const isCity = area?.kind === 'city'
   const volumeStep = niceStep(VOLUME_STEP * (area?.demand_scale ?? 1))
   const volumeMax = Math.ceil((VOLUME_MAX * (area?.demand_scale ?? 1)) / volumeStep) * volumeStep
@@ -87,22 +96,15 @@ export function ControlPanel(p: Props) {
         <label className="field">
           <span className="field-label">Area</span>
           <select value={p.areaId} onChange={(e) => p.onArea(e.target.value)}>
-            {cities.length > 0 && (
-              <optgroup label="Whole city">
-                {cities.map((a) => (
+            {groups.map((g) => (
+              <optgroup key={g.label} label={g.label}>
+                {g.areas.map((a) => (
                   <option key={a.id} value={a.id}>
                     {a.name}
                   </option>
                 ))}
               </optgroup>
-            )}
-            <optgroup label="Neighbourhoods (every street)">
-              {neighbourhoods.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </optgroup>
+            ))}
           </select>
         </label>
         {area && (

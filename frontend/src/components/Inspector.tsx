@@ -47,6 +47,8 @@ interface Props {
   onSelect: (s: Selection | null) => void
   features: RoadFeatures
   onFeatures: (f: RoadFeatures) => void
+  /** The region's explanation of a signal's default (see signals.toml). */
+  signalNotes?: { on: string; off: string }
 }
 
 export function Inspector(p: Props) {
@@ -424,8 +426,8 @@ function SignalEditor(p: Props & { signal: SignalInfo }) {
     <>
       <p className="muted small">
         {sig.automated
-          ? 'Runs automatically by default, like the signals on Dhaka’s automatic corridors.'
-          : 'Off by default: outside Dhaka’s automatic corridors, traffic police direct this junction. Switch it on to run it automatically.'}
+          ? (p.signalNotes?.on ?? 'Runs automatically by default.')
+          : (p.signalNotes?.off ?? 'Off by default. Switch it on to run it automatically.')}
       </p>
       <div className="seg wide" role="radiogroup" aria-label="Signal control">
         {MODES.map((m) => (

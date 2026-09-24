@@ -1,0 +1,26 @@
+# Which signals run automatically by default. Optional: without this file every
+# mapped signal runs. Field reference: docs/regions.md.
+
+# Signals outside the places listed below: "on" (run automatically) or "off"
+# (start switched off, as where traffic police direct most junctions).
+elsewhere = "on"
+note_on = "Runs automatically by default."
+note_off = "Off by default here. Switch it on to run it automatically."
+
+# Junctions that always get a signal (added when an area is prepared if OSM has none).
+# junctions = [
+#   { name = "main_square", lon = 0.0125, lat = 0.0125, radius = 40 },
+# ]
+
+# Signals within `buffer` metres of the line run automatically. Adds nothing.
+# [[corridors]]
+# name = "high_street"
+# buffer = 70
+# points = [[0.000, 0.010], [0.025, 0.010]]
+
+# Signals inside the polygon run automatically; add_missing also signals every
+# unsignalled main-road crossing in it when an area is prepared.
+# [[zones]]
+# name = "campus"
+# add_missing = false
+# polygon = [[0.015, 0.015], [0.020, 0.015], [0.020, 0.020], [0.015, 0.020]]

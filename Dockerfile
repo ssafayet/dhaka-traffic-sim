@@ -4,7 +4,7 @@
 #   docker run -p 8000:8000 -v traffic-sim-areas:/app/backend/data/areas traffic-sim
 #
 # Road networks already built locally (backend/data/areas) are baked into the image.
-# Any preset area that is missing is built on first start (downloads OSM, see
+# Any area listed in a region pack that is missing is built on first start (downloads OSM, see
 # docker/entrypoint.sh), so a fresh clone works too.
 
 # --- frontend -------------------------------------------------------------

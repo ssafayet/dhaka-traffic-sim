@@ -27,7 +27,7 @@ done
 step() { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 
 for tool in uv node npm; do
-  command -v "$tool" >/dev/null || { echo "missing '$tool'; see README.md" >&2; exit 1; }
+  command -v "$tool" >/dev/null || { echo "missing '$tool'; see docs/development.md" >&2; exit 1; }
 done
 
 step "Backend dependencies"
@@ -45,19 +45,8 @@ case "$prepare" in
   none) echo "skipped" ;;
   all) (cd "$ROOT/backend" && uv run traffic-sim-prepare --all) ;;
   download) (cd "$ROOT/backend" && uv run traffic-sim-prepare --all --download) ;;
-  missing)
-    # Areas without a built network; the first run downloads OSM (~15 min for all).
-    missing=$(cd "$ROOT/backend" && uv run python -c "
-from traffic_sim.config import AREA_PRESETS, AREAS_DIR
-print(' '.join(a for a in AREA_PRESETS if not (AREAS_DIR / a / 'area.json').exists()))")
-    if [[ -n "$missing" ]]; then
-      echo "building: $missing"
-      # shellcheck disable=SC2086 — one argument per area id
-      (cd "$ROOT/backend" && uv run traffic-sim-prepare $missing)
-    else
-      echo "all areas built"
-    fi
-    ;;
+  # Areas without a built network; the first run downloads OSM (~15 min for all).
+  missing) (cd "$ROOT/backend" && uv run traffic-sim-prepare --missing) ;;
 esac
 
 for port in "$BACKEND_PORT" "$FRONTEND_PORT"; do

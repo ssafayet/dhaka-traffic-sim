@@ -19,6 +19,8 @@ dependencies = [
 [project.scripts]
 traffic-sim-prepare = "traffic_sim.prepare:main"
 traffic-sim-server = "traffic_sim.server:main"
+traffic-sim-region = "traffic_sim.region:main"
+traffic-sim-run = "traffic_sim.run:main"
 
 [build-system]
 requires = ["uv_build>=0.12.17,<0.13.0"]

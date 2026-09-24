@@ -63,7 +63,11 @@ export default function Docs() {
   useEffect(() => {
     document.title = 'How it works · Dhaka Traffic Sim'
     api.vehicleTypes().then(setTypes).catch(() => setTypes([]))
-    api.presets().then((p) => setPresets(p.presets)).catch(() => setPresets([]))
+    // The guide describes the default region (Dhaka).
+    api
+      .regions()
+      .then((r) => setPresets(r.regions.find((x) => x.id === r.default)?.presets ?? []))
+      .catch(() => setPresets([]))
     api.areas().then((a) => setAreas(a.areas)).catch(() => setAreas([]))
   }, [])
   const neighbourhoods = areas.filter((a) => a.kind !== 'city')

@@ -11,8 +11,8 @@ Two kinds of change:
   then started on. Variants are always built from the unmodified area, so the
   edits describe the whole layout, not a change to the previous variant.
 
-Mid-block U-turns: Dhaka's main roads are divided carriageways (two one-way
-OSM ways), and a U-turn is a gap in the median. It is built by splitting both
+Mid-block U-turns: main roads are often divided carriageways, as Dhaka's are
+(two one-way OSM ways), and a U-turn is a gap in the median. It is built by splitting both
 carriageways at the chosen point and joining the split nodes with a short
 connector road. On an undivided two-way street both directions are split at one
 shared node, where vehicles turn around.
@@ -275,8 +275,8 @@ def topology(area) -> dict:
             "lat": lat,
             "program_id": program_id,
             "mode": "actuated" if program.getType() == "actuated" else "fixed",
-            # Runs automatically unless switched off; the rest start off (police-directed).
-            "automated": tls.getID().startswith(AUTO_SIGNAL) or bool(originals & added) or is_automated(lon, lat),
+            # Runs automatically unless switched off; the rest start off (the region's signals.toml).
+            "automated": tls.getID().startswith(AUTO_SIGNAL) or bool(originals & added) or is_automated(area.region.signals, lon, lat),
             "phases": [
                 {
                     "state": ph.state,

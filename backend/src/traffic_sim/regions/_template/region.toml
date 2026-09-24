@@ -1,0 +1,39 @@
+# Template region pack. Copy this folder to regions/<id>/ (the folder name is
+# the region id), replace every value, then run:
+#   uv run traffic-sim-region check <id>
+# Field reference: docs/regions.md. Folders starting with "_" are not loaded.
+
+name = "Example City"         # shown in the UI
+country = "Example Country"
+driving_side = "right"        # "left" or "right"; decides netconvert --lefthand and the kerb side
+default_area = "centre"       # an id under [areas]
+default_preset = "morning_rush"  # an id in presets.toml
+
+[demand]
+# Preset volumes are vehicles per hour on this area; others scale by main-road lane-km.
+reference_area = "centre"
+# "main_lane_km" from data/areas/<reference_area>/area.json once it is built.
+# `traffic-sim-region check` prints the right value after the first build.
+reference_main_lane_km = 100.0
+# Multiplier on presets' through shares for kind = "city" areas (default 1.0).
+city_through_scale = 0.25
+
+[network]
+# Extra SUMO type files in this folder, loaded after SUMO's osmNetconvert.typ.xml
+# (for example, to change which roads a vehicle class may use). Optional.
+type_files = []
+# Extra netconvert options, appended to prepare.NETCONVERT_OPTIONS. Optional.
+netconvert_options = []
+
+# bbox = [west, south, east, north] in degrees (lon, lat order).
+# kind "area" (default): every street; keep it under about 3 × 3 km.
+# kind "city": main roads only (detail defaults to "arterial"), any size.
+
+[areas.centre]
+name = "City centre"
+bbox = [0.000, 0.000, 0.025, 0.025]
+
+# [areas.whole]
+# name = "Whole city"
+# kind = "city"
+# bbox = [-0.100, -0.100, 0.100, 0.100]

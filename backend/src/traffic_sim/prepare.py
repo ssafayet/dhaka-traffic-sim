@@ -1,15 +1,18 @@
 """Build a simulation area from OpenStreetMap.
 
-    uv run traffic-sim-prepare farmgate mirpur      # one or more presets
-    uv run traffic-sim-prepare --all                # the whole city + every neighbourhood
+    uv run traffic-sim-prepare farmgate mirpur      # areas listed in a region pack
+    uv run traffic-sim-prepare --missing            # every listed area not built yet
+    uv run traffic-sim-prepare --all --region dhaka # rebuild one region's areas
     uv run traffic-sim-prepare pallabi --name "Pallabi" --bbox 90.355,23.815,90.375,23.830
 
-Steps: download OSM (Overpass) → netconvert → signals on Dhaka's automatic
-corridors (signals.py) → network.geojson for the map.
+Areas are listed in regions/<region>/region.toml; the region also decides the
+driving side, road types and automatic signals. Steps: download OSM (Overpass)
+→ netconvert → automatic signals (signals.py) → network.geojson for the map.
 """
 
 import argparse
 import json
+import shutil
 import subprocess
 import sys
 import time
@@ -21,8 +24,9 @@ from pathlib import Path
 import sumolib
 import sumo
 
-from .config import AREA_PRESETS, AREAS_DIR
+from .config import AREAS_DIR, VARIANTS_DIR
 from .geo import NetProjection
+from .region import AreaSpec, Region, RegionError, all_regions, default_region, find_area, get_region
 from .signals import add_automated_signals
 
 OVERPASS_URLS = [
@@ -43,21 +47,13 @@ DETAIL_FILTERS = {
     "arterial": ARTERIAL_ROADS,
 }
 
-# Types that count as "main roads" for demand scaling.
+# Types that count as "main roads" for demand scaling: an area's main-road
+# lane-km over its region's reference area's scales the presets (region.area_info).
 MAIN_ROAD_TYPES = {f"highway.{t}" for t in ("trunk", "primary", "secondary", "tertiary")}
-# Main-road lane-km of the Farmgate area, which the presets' volumes were tuned
-# on. Other areas scale the presets' volumes by their own main-road lane-km.
-REFERENCE_MAIN_LANE_KM = 129.2
 
-CITY_THROUGH_SCALE = 0.25
-
-TYPE_FILES = [
-    Path(sumo.SUMO_HOME) / "data" / "typemap" / "osmNetconvert.typ.xml",
-    Path(__file__).with_name("dhaka.typ.xml"),  # rickshaw main-road rule
-]
+SUMO_TYPES = Path(sumo.SUMO_HOME) / "data" / "typemap" / "osmNetconvert.typ.xml"
 
 NETCONVERT_OPTIONS = [
-    "--lefthand",  # Bangladesh drives on the left
     "--geometry.remove",
     "--roundabouts.guess",
     "--ramps.guess",
@@ -107,13 +103,15 @@ def download_osm(bbox: tuple[float, float, float, float], out: Path, detail: str
     raise RuntimeError(f"OSM download failed: {last_err}")
 
 
-def build_net(osm_file: Path, net_file: Path, bbox: tuple) -> None:
+def build_net(osm_file: Path, net_file: Path, bbox: tuple, region: Region) -> None:
     # Overpass returns whole ways, which can run far outside the box; crop them.
     crop = ["--keep-edges.in-geo-boundary", ",".join(str(v) for v in bbox)]
-    types = ["--type-files", ",".join(str(f) for f in TYPE_FILES)]
+    # The region's type files load after SUMO's and replace the types they list.
+    types = ["--type-files", ",".join(str(f) for f in (SUMO_TYPES, *region.type_files))]
+    side = ["--lefthand"] if region.lefthand else []
     cmd = [
         "netconvert", "--osm-files", str(osm_file), "-o", str(net_file),
-        *NETCONVERT_OPTIONS, *types, *crop,
+        *NETCONVERT_OPTIONS, *side, *region.netconvert_options, *types, *crop,
     ]
     print("  running netconvert ...")
     subprocess.run(cmd, check=True)
@@ -167,20 +165,18 @@ def build_geojson(net_file: Path, out: Path, extra_props: Callable[[object], dic
     }
 
 
-def prepare_area(
-    area_id: str, name: str, city: str, bbox: tuple,
-    kind: str = "area", detail: str = "full", force_download=False,
-) -> Path:
+def prepare_area(region: Region, spec: AreaSpec, force_download=False) -> Path:
+    area_id, bbox = spec.id, spec.bbox
     area_dir = AREAS_DIR / area_id
     area_dir.mkdir(parents=True, exist_ok=True)
     osm_file = area_dir / "map.osm"
     net_file = area_dir / "net.net.xml"
 
-    print(f"[{area_id}] {name}")
+    print(f"[{region.id}/{area_id}] {spec.name}")
     if force_download or not osm_file.exists():
-        download_osm(bbox, osm_file, detail)
-    build_net(osm_file, net_file, bbox)
-    added = add_automated_signals(net_file)
+        download_osm(bbox, osm_file, spec.detail)
+    build_net(osm_file, net_file, bbox, region)
+    added = add_automated_signals(net_file, region.signals)
     if added:
         print(f"  added {added} automatic signal{'s' if added > 1 else ''} OSM doesn't map")
     stats = build_geojson(net_file, area_dir / "network.geojson")
@@ -190,72 +186,88 @@ def prepare_area(
     (area_dir / "bus_stops.json").write_text(json.dumps(_osm_bus_stops(area_dir), ensure_ascii=False))
 
     west, south, east, north = bbox
+    # demand_scale and through_scale come from the region when the area loads
+    # (region.area_info), so tuning the region needs no rebuild.
     meta = {
         "id": area_id,
-        "name": name,
-        "city": city,
-        "kind": kind,
-        "detail": detail,
+        "name": spec.name,
+        "region": region.id,
+        "city": region.name,
+        "kind": spec.kind,
+        "detail": spec.detail,
         "bbox": list(bbox),
         "center": [(west + east) / 2, (south + north) / 2],
         **stats,
-        "demand_scale": round(max(0.1, stats["main_lane_km"] / REFERENCE_MAIN_LANE_KM), 2),
-        # Presets' through shares are for a neighbourhood, where most traffic is
-        # passing through. Across the whole city most trips start and end inside.
-        "through_scale": CITY_THROUGH_SCALE if kind == "city" else 1.0,
     }
     (area_dir / "area.json").write_text(json.dumps(meta, indent=2))
+    # Layout variants were built from the old network (their ids hash only the edits).
+    shutil.rmtree(VARIANTS_DIR / area_id, ignore_errors=True)
     print(f"  done: {stats['edges']} edges, {stats['road_km']} km of road")
     return area_dir
 
 
+def _is_built(area_id: str) -> bool:
+    return (AREAS_DIR / area_id / "area.json").exists() and (AREAS_DIR / area_id / "net.net.xml").exists()
+
+
 def main(argv: list[str] | None = None) -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("areas", nargs="*", metavar="area", help=f"area ids; presets: {', '.join(AREA_PRESETS)}")
-    p.add_argument("--all", action="store_true", help="build every preset area")
-    p.add_argument("--bbox", help="west,south,east,north (required for non-preset areas)")
+    p.add_argument("areas", nargs="*", metavar="area", help="area ids from the region packs (see traffic-sim-region list)")
+    p.add_argument("--all", action="store_true", help="build every listed area")
+    p.add_argument("--missing", action="store_true", help="build every listed area that isn't built yet")
+    p.add_argument("--region", action="append", help="with --all/--missing: only this region (repeatable); "
+                   "with --bbox: the region a custom area belongs to (default: the default region)")
+    p.add_argument("--bbox", help="west,south,east,north: build an area that no region pack lists")
     p.add_argument("--name")
-    p.add_argument("--city", default="Dhaka")
     p.add_argument("--download", action="store_true", help="re-download OSM even if cached")
     args = p.parse_args(argv)
+    try:
+        regions = all_regions()
+    except RegionError as e:
+        sys.exit(f"invalid region packs (run `traffic-sim-region check`):\n{e}")
 
-    if args.all or len(args.areas) > 1:
-        ids = list(AREA_PRESETS) if args.all else args.areas
-        unknown = [a for a in ids if a not in AREA_PRESETS]
-        if unknown:
-            p.error(f"not presets: {', '.join(unknown)} (custom areas are built one at a time)")
-        failed = []
-        for area_id in ids:
-            try:
-                _prepare_preset(area_id, args.download)
-            except Exception as e:  # noqa: BLE001 — keep going, report at the end
-                print(f"  FAILED: {e}")
-                failed.append(area_id)
-        if failed:
-            sys.exit(f"failed: {', '.join(failed)}; re-run with those ids")
-        return
-    if not args.areas:
-        p.error("give an area id or --all")
-
-    area_id = args.areas[0]
     if args.bbox:
+        if len(args.areas) != 1:
+            p.error("--bbox builds one area: give exactly one id")
         bbox = tuple(float(v) for v in args.bbox.split(","))
         if len(bbox) != 4:
             p.error("--bbox needs 4 numbers")
-        prepare_area(area_id, args.name or area_id, args.city, bbox, force_download=args.download)
-    elif area_id in AREA_PRESETS:
-        _prepare_preset(area_id, args.download)
+        region = get_region(args.region[0]) if args.region else default_region()
+        spec = AreaSpec(args.areas[0], args.name or args.areas[0], bbox)
+        prepare_area(region, spec, force_download=args.download)
+        return
+
+    if args.all or args.missing:
+        picked = [regions[r] for r in args.region or regions if r in regions]
+        unknown = set(args.region or ()) - set(regions)
+        if unknown:
+            p.error(f"no region pack: {', '.join(sorted(unknown))}")
+        todo = [(r, a) for r in picked for a in r.areas.values() if args.all or not _is_built(a.id)]
+        if not todo:
+            print("all areas built")
+            return
+    elif args.areas:
+        todo, unknown = [], []
+        for area_id in args.areas:
+            found = find_area(area_id)
+            if found:
+                todo.append(found)
+            else:
+                unknown.append(area_id)
+        if unknown:
+            p.error(f"not in any region pack: {', '.join(unknown)} (add them to region.toml, or pass --bbox)")
     else:
-        p.error(f"'{area_id}' is not a preset; pass --bbox")
+        p.error("give area ids, --missing or --all")
 
-
-def _prepare_preset(area_id: str, force_download: bool) -> None:
-    preset = AREA_PRESETS[area_id]
-    prepare_area(
-        area_id, preset["name"], preset.get("city", "Dhaka"), preset["bbox"],
-        kind=preset.get("kind", "area"), detail=preset.get("detail", "full"),
-        force_download=force_download,
-    )
+    failed = []
+    for region, spec in todo:
+        try:
+            prepare_area(region, spec, args.download)
+        except Exception as e:  # noqa: BLE001 — keep going, report at the end
+            print(f"  FAILED: {e}")
+            failed.append(spec.id)
+    if failed:
+        sys.exit(f"failed: {', '.join(failed)}; re-run with those ids")
 
 
 if __name__ == "__main__":
