@@ -120,7 +120,6 @@ export default function App() {
   const latestFrame = useRef<Frame | null>(null)
   const historyRef = useRef<HistoryPoint[]>([])
   const client = useRef<SimClient | null>(null)
-  const autoStarted = useRef(false)
 
   // Frames arrive up to 20×/s; the map reads the store directly, React state
   // (stats, charts) refreshes at 4 Hz.
@@ -250,14 +249,6 @@ export default function App() {
     [areaId, demand, options, speed, store, edges, signalPhases, live, applied.variant, closures, signalPlans, features],
   )
 
-  // Start automatically once everything has loaded.
-  useEffect(() => {
-    if (!autoStarted.current && areaId && types.length && roads.length && Object.keys(demand.mix).length) {
-      autoStarted.current = true
-      start()
-    }
-  }, [areaId, types, roads, demand, start])
-
   // Push demand changes to the running sim (debounced while dragging).
   useEffect(() => {
     if (state !== 'running' && state !== 'paused') return
@@ -329,7 +320,8 @@ export default function App() {
       setClosures(nextClosures)
       setSignalPlans(nextPlans)
       setSelection(null)
-      start({ variant, closures: nextClosures, signals: nextPlans })
+      // Before the first start the new layout just waits for Start.
+      if (active) start({ variant, closures: nextClosures, signals: nextPlans })
     } catch (e) {
       setLayoutErrors(
         e instanceof LayoutEditError ? e.errors : [{ kind: 'other', index: -1, message: 'Could not reach the server to build the road layout.' }],
@@ -494,6 +486,7 @@ export default function App() {
           building={building}
           layoutErrors={layoutErrors}
           onApplyLayout={applyLayout}
+          running={active}
           onSelect={locate}
           onClearAll={clearAll}
           features={features}
