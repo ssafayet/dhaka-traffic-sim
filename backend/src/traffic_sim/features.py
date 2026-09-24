@@ -16,7 +16,7 @@ All of it applies live to a running simulation (see Simulation.set_features):
 
 Points arrive as lon/lat and are snapped to the nearest suitable road. The
 defaults are the bus stops in the area's OpenStreetMap data and the
-waterlogging spots in waterlogging.json (from news reports).
+waterlogging spots in the region's waterlogging.json (from news reports).
 """
 
 import json
@@ -24,8 +24,6 @@ import math
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-
-WATERLOGGING_FILE = Path(__file__).with_name("waterlogging.json")
 
 MAX_POINTS = 500  # of each kind
 MAX_ZONES = 200
@@ -322,7 +320,8 @@ def defaults(area, base_dir: Path) -> dict:
     """Bus stops from OpenStreetMap and news-reported waterlogging spots in the area."""
     west, south, east, north = area.meta["bbox"]
     pad = 0.003  # ~300 m: zones just outside the box still reach its roads
-    doc = json.loads(WATERLOGGING_FILE.read_text())
+    wl = area.region.waterlogging_file
+    doc = json.loads(wl.read_text()) if wl else {"about": "", "sources": {}, "spots": []}
     water = [
         {**s, "sources": [doc["sources"][k] for k in s["sources"]]}
         for s in doc["spots"]

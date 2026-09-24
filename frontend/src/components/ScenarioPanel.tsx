@@ -28,6 +28,8 @@ interface Props {
   building: boolean
   layoutErrors: LayoutError[]
   onApplyLayout: () => void
+  /** A simulation is running, so applying the layout restarts it. */
+  running: boolean
   onSelect: (s: Selection) => void
   onClearAll: () => void
   features: RoadFeatures
@@ -191,7 +193,7 @@ export function ScenarioPanel(p: Props) {
           ))}
           {p.layoutDirty && (
             <button className="primary" disabled={p.building} onClick={p.onApplyLayout}>
-              {p.building ? 'Building the road network…' : `Apply layout changes${layoutCount(p.layout) ? ` (${layoutCount(p.layout)})` : ''} & restart`}
+              {p.building ? 'Building the road network…' : `Apply layout changes${layoutCount(p.layout) ? ` (${layoutCount(p.layout)})` : ''}${p.running ? ' & restart' : ''}`}
             </button>
           )}
         </>

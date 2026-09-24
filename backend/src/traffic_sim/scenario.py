@@ -11,8 +11,8 @@ Two kinds of change:
   then started on. Variants are always built from the unmodified area, so the
   edits describe the whole layout, not a change to the previous variant.
 
-Mid-block U-turns: Dhaka's main roads are divided carriageways (two one-way
-OSM ways), and a U-turn is a gap in the median. It is built by splitting both
+Mid-block U-turns: main roads are often divided carriageways, as Dhaka's are
+(two one-way OSM ways), and a U-turn is a gap in the median. It is built by splitting both
 carriageways at the chosen point and joining the split nodes with a short
 connector road. On an undivided two-way street both directions are split at one
 shared node, where vehicles turn around.
@@ -43,11 +43,12 @@ from sumolib.geomhelper import polygonOffsetWithMinimumDistanceToPoint, position
 
 from .config import VARIANTS_DIR
 from .prepare import build_geojson
+from .signals import PREFIX as AUTO_SIGNAL, is_automated
 
 VARIANT_ID = re.compile(r"[0-9a-f]{16}")
 # Part of every variant id: bump it when a change here builds different
 # networks from the same edits, so stale builds aren't reused.
-BUILD_FORMAT = 3
+BUILD_FORMAT = 4
 MAX_CLOSURES = 2000
 MAX_UTURNS = 50
 MAX_JUNCTION_EDITS = 100
@@ -238,6 +239,9 @@ def topology(area) -> dict:
 
     signals = []
     node_signal: dict[str, str] = {}
+    # Junctions (as in the unedited area) the user put a signal on.
+    added = set(area.meta.get("added_signals", ()))
+    joined = area.meta.get("joined") or {}
     for tls in net.getTrafficLights():
         programs = tls.getPrograms()
         if not programs:
@@ -264,12 +268,15 @@ def topology(area) -> dict:
         cx = sum(c[0] for c in nodes.values()) / len(nodes)
         cy = sum(c[1] for c in nodes.values()) / len(nodes)
         (lon, lat), = lonlat([(cx, cy)])
+        originals = {o for n in nodes for o in joined.get(n, (n,))}
         signals.append({
             "id": tls.getID(),
             "lon": lon,
             "lat": lat,
             "program_id": program_id,
             "mode": "actuated" if program.getType() == "actuated" else "fixed",
+            # Runs automatically unless switched off; the rest start off (the region's signals.toml).
+            "automated": tls.getID().startswith(AUTO_SIGNAL) or bool(originals & added) or is_automated(area.region.signals, lon, lat),
             "phases": [
                 {
                     "state": ph.state,
@@ -807,6 +814,6 @@ def _write_variant(area, plan: _Plan, tmp: Path, edits: dict, vid: str) -> None:
         return {"base": pieces.get(eid, eid)}
 
     stats = build_geojson(net_file, tmp / "network.geojson", props)
-    meta = {**area.meta, **stats, "variant": vid, "joined": joined}
+    meta = {**area.meta, **stats, "variant": vid, "joined": joined, "added_signals": list(plan.tls)}
     (tmp / "area.json").write_text(json.dumps(meta, indent=2))
     (tmp / "edits.json").write_text(json.dumps(_canonical(edits), indent=2, ensure_ascii=False))

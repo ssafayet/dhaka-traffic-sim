@@ -1,4 +1,4 @@
-import type { Area, FeatureDefaults, LayoutEdits, LayoutError, Preset, RoadFeature, Topology, VehicleType } from './types'
+import type { Area, FeatureDefaults, LayoutEdits, LayoutError, Region, RoadFeature, Topology, VehicleType } from './types'
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(path)
@@ -30,7 +30,8 @@ export const api = {
   /** OpenStreetMap bus stops and news-reported waterlogging spots in the area. */
   featureDefaults: (areaId: string) => get<FeatureDefaults>(`/api/areas/${encodeURIComponent(areaId)}/features`),
   vehicleTypes: () => get<VehicleType[]>('/api/vehicle-types'),
-  presets: () => get<{ default: string; presets: Preset[] }>('/api/presets'),
+  /** Region packs, each with its presets. */
+  regions: () => get<{ default: string; regions: Region[] }>('/api/regions'),
   /** Build the network with these layout edits; variant null = no edits. */
   async buildLayout(areaId: string, edits: LayoutEdits): Promise<{ variant: string | null }> {
     const body = {

@@ -1,4 +1,4 @@
-"""Dhaka vehicle mix.
+"""Vehicle types, shared by every region (each region's presets choose the mix).
 
 Each type maps to a SUMO vType. Parameters are first-guess values for Dhaka
 traffic (low speeds, small gaps, aggressive lateral filtering) and are meant to
@@ -7,8 +7,8 @@ squeeze past larger ones instead of queueing in strict lanes.
 
 Rickshaws (battery and pedal) get their SUMO vClass per run: "moped" when they
 are allowed on main roads, "bicycle" when they are not. The road network bans
-bicycles from trunk and primary roads (see dhaka.typ.xml), so switching the
-class switches the rule without rebuilding the network.
+bicycles from trunk and primary roads (see regions/dhaka/roads.typ.xml), so
+switching the class switches the rule without rebuilding the network.
 """
 
 from dataclasses import dataclass, field
@@ -86,7 +86,7 @@ def vclass_for(vt: VehicleType, rickshaws_on_main_roads: bool) -> str:
     return RICKSHAW_CLASS_ALLOWED if rickshaws_on_main_roads else RICKSHAW_CLASS_BANNED
 
 
-def vtypes_xml(rickshaws_on_main_roads: bool = True) -> str:
+def vtypes_xml(rickshaws_on_main_roads: bool = True, kerb_side: str = "left") -> str:
     lines = ["<additional>"]
     for vt in VEHICLE_TYPES:
         attrs = {
@@ -116,7 +116,7 @@ def vtypes_xml(rickshaws_on_main_roads: bool = True) -> str:
         }
         attr_str = " ".join(f"{k}={quoteattr(str(v))}" for k, v in attrs.items())
         lines.append(f"    <vType {attr_str}/>")
-    lines += special_vtypes()
+    lines += special_vtypes(kerb_side)
     lines.append("</additional>")
     return "\n".join(lines) + "\n"
 
@@ -124,19 +124,19 @@ def vtypes_xml(rickshaws_on_main_roads: bool = True) -> str:
 # Not traffic: stationary vehicles standing in for parked rickshaws and CNGs,
 # and for people crossing the road (see features.py). They use a vehicle class
 # no real vehicle has, so lane closures still apply to them and nothing else
-# changes. Parked ones keep to the kerb (the left: Bangladesh drives on the left).
+# changes. Parked ones keep to the kerb: the driving side ("left" in Dhaka).
 PARKED_PREFIX = "parked_"
 CROWD_TYPE = "crowd"
 SPECIAL_CLASS = "custom1"
 
 
-def special_vtypes() -> list[str]:
+def special_vtypes(kerb_side: str = "left") -> list[str]:
     out = []
     for vt in VEHICLE_TYPES:
         if vt.id in ("e_rickshaw", "rickshaw", "cng"):
             out.append(
                 f'    <vType id="{PARKED_PREFIX}{vt.id}" vClass="{SPECIAL_CLASS}" length="{vt.length}" '
-                f'width="{vt.width}" minGap="0.3" maxSpeed="1" latAlignment="left" color="{vt.color}"/>'
+                f'width="{vt.width}" minGap="0.3" maxSpeed="1" latAlignment="{kerb_side}" color="{vt.color}"/>'
             )
     # As wide as a lane, so nothing slips past while people cross.
     out.append(f'    <vType id="{CROWD_TYPE}" vClass="{SPECIAL_CLASS}" length="2" width="3.2" minGap="0" maxSpeed="1" color="#ffffff"/>')

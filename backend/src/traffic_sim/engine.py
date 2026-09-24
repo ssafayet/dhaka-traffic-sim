@@ -20,6 +20,7 @@ from . import scenario
 from .config import AREAS_DIR, VARIANTS_DIR
 from .demand import DemandGenerator, DemandSettings, EdgePools
 from .geo import NetProjection
+from .region import area_info, region_for
 from .features import CROWD_SLOWDOWN, KERB_STOPPERS, RAIN_EFFECT, VENDOR_SPEED_ONE_LANE, WATER_DEPTH, Features
 from .scenario import ClosureRule, SignalPlan, closures_now
 from .vtypes import CROWD_TYPE, PARKED_PREFIX, VEHICLE_TYPES, vclass_for, vtypes_xml
@@ -66,7 +67,8 @@ class Area:
 
     def __init__(self, area_dir: Path):
         self.dir = area_dir
-        self.meta = json.loads((area_dir / "area.json").read_text())
+        self.meta = area_info(json.loads((area_dir / "area.json").read_text()))
+        self.region = region_for(self.meta)
         self.variant: str | None = self.meta.get("variant")
         self.net_file = area_dir / "net.net.xml"
         self.net = sumolib.net.readNet(str(self.net_file), withInternal=False, withPrograms=True)
@@ -126,13 +128,17 @@ _area_lock = threading.Lock()  # the city network takes seconds to load; load it
 
 
 def list_areas() -> list[dict]:
+    """Prepared areas, with their region's values (region.area_info)."""
     if not AREAS_DIR.exists():
         return []
-    return [
-        json.loads((d / "area.json").read_text())
-        for d in sorted(AREAS_DIR.iterdir())
-        if (d / "area.json").exists() and (d / "net.net.xml").exists()
-    ]
+    out = []
+    for d in sorted(AREAS_DIR.iterdir()):
+        if (d / "area.json").exists() and (d / "net.net.xml").exists():
+            try:
+                out.append(area_info(json.loads((d / "area.json").read_text())))
+            except KeyError:
+                continue  # its region pack was removed
+    return out
 
 
 def load_area(area_id: str, variant: str | None = None) -> Area:
@@ -147,7 +153,7 @@ def load_area(area_id: str, variant: str | None = None) -> Area:
                 area_dir = AREAS_DIR / area_id
                 if not (area_dir / "area.json").exists():
                     raise KeyError(area_id)
-                _area_cache[area_id] = Area(area_dir)
+                _area_cache[area_id] = Area(area_dir)  # KeyError if its region is gone
             return _area_cache[area_id]
         key = (area_id, variant)
         if key not in _variant_cache:
@@ -234,7 +240,7 @@ class Simulation:
 
     def start(self) -> None:
         vtypes_file = self._tmp / "vtypes.add.xml"
-        vtypes_file.write_text(vtypes_xml(self.options.rickshaws_on_main_roads))
+        vtypes_file.write_text(vtypes_xml(self.options.rickshaws_on_main_roads, self.area.region.kerb_side))
         o = self.options
         cmd = [
             "sumo",
@@ -271,8 +277,11 @@ class Simulation:
         if self._initial_closures:
             self.closure_rules = list(self._initial_closures)
         self._refresh_lanes()
-        for tls, plan in self._initial_signals.items():
-            self.set_signal(tls, plan)
+        for tls in self.signal_ids:
+            if tls in self._initial_signals:
+                self.set_signal(tls, self._initial_signals[tls])
+            elif not self.area.signals[tls]["automated"]:
+                self.set_signal(tls, None)
 
     def close(self) -> None:
         if self.conn is not None:
@@ -638,11 +647,15 @@ class Simulation:
         self.total_breakdowns += 1
 
     def set_signal(self, tls: str, plan: SignalPlan | None) -> None:
-        """Run a user's timings on a signal (None: the network's own program)."""
+        """Run a user's timings on a signal (None: its default, see signals.py).
+
+        By default a signal the region runs automatically (signals.toml) runs the network's
+        own program; any other is switched off, as traffic police direct it.
+        """
         conn = self.conn
         signal = self.area.signals[tls]
         if plan is None:
-            conn.trafficlight.setProgram(tls, signal["program_id"])
+            conn.trafficlight.setProgram(tls, signal["program_id"] if signal["automated"] else "off")
             self.signal_plans.pop(tls, None)
             return
         if plan.mode == "off":

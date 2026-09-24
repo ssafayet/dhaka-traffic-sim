@@ -30,13 +30,12 @@ import {
   EDIT_RGBA,
   MAP_STYLE,
   ROAD_IDLE,
-  SIGNAL_RGBA,
   congestionIndex,
   congestionRGBA,
   vehicleRGBA,
   type Theme,
 } from '../lib/palette'
-import { isUTurnNode, phaseKind, signalName } from '../lib/scenario'
+import { approachLight, defaultPlan, isUTurnNode, signalName } from '../lib/scenario'
 
 export type ColorMode = 'type' | 'speed'
 
@@ -153,10 +152,46 @@ function midpoint(coords: Point[]): Point {
   return coords.length % 2 ? coords[i] : [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
 }
 
+/** One signal head per approach, at its stop line. */
+interface SignalHead {
+  signal: SignalInfo
+  /** Link indices of the approach's movements. */
+  links: number[]
+  label: string
+  position: [number, number]
+}
+
+const HEAD_SETBACK = 6 // m back from the stop line, over the approach road
+
+function signalHeads(signals: SignalInfo[], byId: Map<string, RoadFeature>): SignalHead[] {
+  const heads: SignalHead[] = []
+  for (const s of signals) {
+    const approaches = new Map<string, number[]>()
+    s.links.forEach((l, i) => {
+      if (l) approaches.set(l.from, [...(approaches.get(l.from) ?? []), i])
+    })
+    for (const [from, links] of approaches) {
+      const link = s.links[links[0]]!
+      const coords = byId.get(from)?.geometry.coordinates
+      let position: [number, number] = [s.lon, s.lat]
+      if (coords && coords.length >= 2) {
+        const [x1, y1] = coords[coords.length - 2]
+        const [x2, y2] = coords[coords.length - 1]
+        const mx = (x1 - x2) * 111_320 * Math.cos((y2 * Math.PI) / 180)
+        const my = (y1 - y2) * 111_320
+        const t = Math.min(1, HEAD_SETBACK / (Math.hypot(mx, my) || 1))
+        position = [x2 + (x1 - x2) * t, y2 + (y1 - y2) * t]
+      }
+      heads.push({ signal: s, links, label: `${link.name || 'Unnamed road'} from the ${link.approach}`, position })
+    }
+  }
+  return heads
+}
+
 /** Map data derived from the edits, recomputed only when they change. */
 function useEditLayers(p: Props) {
   const byId = useMemo(() => new Map(p.roads.map((r) => [r.properties.id, r])), [p.roads])
-  return useMemo(() => {
+  const edits = useMemo(() => {
     const closed: RoadFeature[] = []
     const markers: Marker[] = []
     for (const c of p.closures) {
@@ -188,6 +223,8 @@ function useEditLayers(p: Props) {
     const selected = p.selection?.kind === 'road' ? byId.get(p.selection.id) : undefined
     return { closed, markers, junctions, pendingJunctions, selectedGroup, selected: selected ? [selected] : [] }
   }, [byId, p.closures, p.roads, p.layout, p.appliedLayout, p.topology, p.selection])
+  const heads = useMemo(() => signalHeads(p.topology?.signals ?? [], byId), [p.topology, byId])
+  return { ...edits, heads }
 }
 
 export function MapView(props: Props) {
@@ -254,7 +291,7 @@ export function MapView(props: Props) {
         return { kind: 'road', id: r.id, lon: info.coordinate[0], lat: info.coordinate[1] }
       }
       if (id === 'junctions' && info.object) return { kind: 'junction', id: (info.object as JunctionInfo).id }
-      if (id === 'signals' && info.object) return { kind: 'signal', id: (info.object as SignalInfo).id }
+      if (id === 'signals' && info.object) return { kind: 'signal', id: (info.object as SignalHead).signal.id }
       if (id === 'edit-markers' && info.object) {
         const m = info.object as Marker
         if (m.kind === 'uturn-pending' && m.index !== undefined) return { kind: 'uturn', index: m.index }
@@ -292,12 +329,18 @@ export function MapView(props: Props) {
       }
       if (info.layer?.id === 'broken') return { html: 'Broken-down vehicle', className: 'map-tooltip' }
       if (info.layer?.id === 'signals' && info.object) {
-        const s = info.object as SignalInfo
+        const head = info.object as SignalHead
+        const s = head.signal
         const plan = cur.signalPlans[s.id]
-        const mode = plan?.mode ?? s.mode
+        const mode = (plan ?? defaultPlan(s)).mode
         const phase = cur.signalPhases.phases[s.id]
-        const status = mode === 'off' ? 'switched off' : `${mode === 'fixed' ? 'fixed time' : 'actuated'}${phase === undefined ? '' : ` · phase ${phase + 1} of ${s.phases.length}`}`
-        return { html: `<strong>${escapeHtml(signalName(s))}</strong><br>Traffic signal · ${status}`, className: 'map-tooltip' }
+        const off = plan ? 'switched off' : 'off, directed by traffic police'
+        const status = mode === 'off' ? off : `${mode === 'fixed' ? 'fixed time' : 'actuated'}${phase === undefined ? '' : ` · phase ${phase + 1} of ${s.phases.length}`}`
+        const light = mode !== 'off' && phase !== undefined ? `: ${approachLight(s.phases[phase]?.state ?? '', head.links)}` : ''
+        return {
+          html: `<strong>${escapeHtml(signalName(s))}</strong><br>Traffic signal · ${status}<br>${escapeHtml(head.label)}${light}`,
+          className: 'map-tooltip',
+        }
       }
       if (info.layer?.id === 'junctions' && info.object) {
         const j = info.object as JunctionInfo
@@ -490,29 +533,41 @@ export function MapView(props: Props) {
             getRadius: selectedJunction,
           },
         }),
-        new ScatterplotLayer<SignalInfo>({
-          id: 'signals',
-          data: cur.topology?.signals ?? [],
+        // Rings behind the selected signal's heads.
+        new ScatterplotLayer<SignalHead>({
+          id: 'signal-selected',
+          data: edits.heads.filter((h) => h.signal.id === selectedSignal),
           visible: zoom >= SIGNAL_ZOOM,
-          getPosition: (s) => [s.lon, s.lat],
-          getRadius: (s) => (s.id === selectedSignal ? 11 : 7),
-          radiusUnits: 'pixels',
-          getFillColor: (s) => {
-            if (cur.signalPlans[s.id]?.mode === 'off') return SIGNAL_RGBA.off
-            const phase = cur.signalPhases.phases[s.id]
-            return phase === undefined ? SIGNAL_RGBA.off : SIGNAL_RGBA[phaseKind(s.phases[phase]?.state ?? '')]
-          },
-          getLineColor: (s) => (s.id === selectedSignal ? accent : EDIT_RGBA.markerStroke[theme]),
+          getPosition: (h) => h.position,
+          getRadius: 9,
+          radiusUnits: 'meters',
+          radiusMinPixels: 11,
+          radiusMaxPixels: 22,
+          filled: false,
           stroked: true,
+          getLineColor: accent,
           lineWidthUnits: 'pixels',
-          getLineWidth: (s) => (s.id === selectedSignal ? 3 : 2),
-          pickable: true,
-          updateTriggers: {
-            getFillColor: [cur.signalPhases.version, cur.signalPlans],
-            getLineColor: [theme, selectedSignal],
-            getLineWidth: selectedSignal,
-            getRadius: selectedSignal,
+          getLineWidth: 3,
+        }),
+        // Each approach shows the light its drivers see.
+        new IconLayer<SignalHead>({
+          id: 'signals',
+          data: edits.heads,
+          visible: zoom >= SIGNAL_ZOOM,
+          iconAtlas: markerAtlas().atlas as unknown as string,
+          iconMapping: markerAtlas().mapping,
+          getIcon: ({ signal: s, links }): MarkerIcon => {
+            if ((cur.signalPlans[s.id] ?? defaultPlan(s)).mode === 'off') return 'signal_off'
+            const phase = cur.signalPhases.phases[s.id]
+            return phase === undefined ? 'signal_off' : `signal_${approachLight(s.phases[phase]?.state ?? '', links)}`
           },
+          getPosition: (h) => h.position,
+          getSize: 14,
+          sizeUnits: 'meters',
+          sizeMinPixels: 16,
+          sizeMaxPixels: 36,
+          pickable: true,
+          updateTriggers: { getIcon: [cur.signalPhases.version, cur.signalPlans] },
         }),
         new IconLayer<PointMarker>({
           id: 'feature-points',

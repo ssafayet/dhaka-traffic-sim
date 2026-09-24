@@ -1,8 +1,10 @@
 # Developer guide
 
-How the simulator is put together and where to make common changes. For running and
-deploying it, see the [README](README.md). For how to submit changes, see
-[CONTRIBUTING.md](CONTRIBUTING.md).
+How the simulator is put together and where to make common changes. For running it,
+see the [README](../README.md); for deploying it, [deployment.md](deployment.md). For how
+to submit changes, see [CONTRIBUTING.md](CONTRIBUTING.md). Adding or tuning a city or
+neighbourhood is a data change: see [regions.md](regions.md), and
+[agent-guide.md](agent-guide.md) for step-by-step playbooks.
 
 ## Setup
 
@@ -30,7 +32,7 @@ cd backend && uv run traffic-sim-prepare farmgate
 
 ```
 Browser (React + MapLibre + deck.gl)
-   │  REST  /api/...        areas, road network GeoJSON, presets, vehicle types, layouts
+   │  REST  /api/...        regions + presets, areas, road network GeoJSON, vehicle types, layouts
    │  WebSocket /ws/sim     start / live edits  →   ← frames, status, events
    ▼
 FastAPI server (server.py)
@@ -51,17 +53,45 @@ Frames carry vehicle positions as parallel arrays (`ids`, `lon`, `lat`, `angle`,
 vehicle count grows, and `frontend/src/lib/vehicleStore.ts` interpolates between
 frames so vehicles still move at 60 fps.
 
+### Region packs
+
+Everything specific to a city is data in a region pack,
+`backend/src/traffic_sim/regions/<id>/`: its areas (bounding boxes), driving side,
+road type overrides, time-of-day presets, where signals run automatically, and default
+flood zones. `region.py` loads and validates the packs, and the rest of the code asks it
+rather than holding city constants. The format is in [regions.md](regions.md).
+
+```
+region.toml, presets.toml, signals.toml, waterlogging.json, *.typ.xml
+   │  region.py: parse + validate (traffic-sim-region check)
+   ▼
+Region ──► prepare.py   driving side, type files, bbox, signals to add
+       ──► engine.Area  area_info(): demand_scale, through_scale from the reference area
+       ──► scenario.py  which signals are "automated" (signals.is_automated)
+       ──► features.py  default flood zones
+       ──► server.py    /api/regions: presets, defaults, signal notes
+```
+
+Vehicle types (`vtypes.py`) are shared by every region; a region's presets only choose
+the mix.
+
 ### Data flow for an area
 
-1. `traffic-sim-prepare` (`prepare.py`) downloads OSM for the area's bounding box from
-   Overpass, runs `netconvert` with left-hand traffic and Dhaka road types
-   (`dhaka.typ.xml`), and writes into `backend/data/areas/<id>/`:
+1. `traffic-sim-prepare` (`prepare.py`) looks the area up in the region packs, downloads
+   OSM for its bounding box from Overpass, runs `netconvert` with the region's driving
+   side and road types, and writes into `backend/data/areas/<id>/`:
    - `net.net.xml`: the SUMO network
    - `network.geojson`: the roads as the map draws them
-   - `area.json`: name, bbox, `demand_scale` and other metadata
-2. `load_area()` (`engine.py`) reads that directory and caches the parsed network, the
-   routable edge pools per vehicle class (`demand.py`) and the topology used by the road
-   editor (`scenario.py`).
+   - `area.json`: name, region, bbox, `main_lane_km` and other metadata
+   Preparing also signals the junctions the region's `signals.toml` lists that OSM leaves
+   unsignalled (`signals.py`). Where the region says `elsewhere = "off"` (Dhaka), other
+   signals start switched off (police-directed); topology marks each signal
+   `automated`, and `Simulation.set_signal(tls, None)` restores that default.
+2. `load_area()` (`engine.py`) reads that directory, adds the values its region decides
+   (`region.area_info`: `demand_scale`, `through_scale`), and caches the parsed network,
+   the routable edge pools per vehicle class (`demand.py`) and the topology used by the
+   road editor (`scenario.py`). Because the scaling is computed here, tuning a region
+   needs no rebuild.
 3. On `start`, `Simulation` launches SUMO on the network. `demand.py` generates trips
    live, not from a pre-built route file: through traffic enters and leaves at the area
    border, and local trips start and end on streets weighted by lane-km.
@@ -86,11 +116,14 @@ Nothing in `backend/data/` is committed; it is all rebuilt from OSM.
 
 | Module | What it does |
 | --- | --- |
-| `config.py` | Paths and `AREA_PRESETS` (the areas `traffic-sim-prepare` knows) |
+| `config.py` | Paths and the default region (`TRAFFIC_SIM_REGION`) |
+| `regions/<id>/` | Region packs: areas, presets, signals, flood zones, road types (data) |
+| `region.py` | Loads and validates region packs; demand scaling; `traffic-sim-region` CLI |
 | `prepare.py` | OSM download → netconvert → `network.geojson` and `area.json` |
-| `vtypes.py` | Vehicle types: size, speed, gap-taking; writes the SUMO vTypes |
+| `signals.py` | Applies a region's signal policy; adds the missing signals when an area is prepared |
+| `vtypes.py` | Vehicle types (shared): size, speed, gap-taking; writes the SUMO vTypes |
 | `demand.py` | Live trip generation and routable edge pools |
-| `presets.py` | Time-of-day scenarios: volume, mix, through-traffic share |
+| `run.py` | `traffic-sim-run`: a headless run that prints stats, for tuning |
 | `engine.py` | `Area`, `Simulation`: one SUMO run over TraCI, stats, frames |
 | `scenario.py` | Closures, signal plans, layout edits and variant building |
 | `features.py` | Bus stops, stands, crossings, hot zones, waterlogging, weather |
@@ -128,27 +161,27 @@ layer, so 60 fps rendering doesn't trigger React re-renders.
 
 ## Common changes
 
-### Add an area
+### Add an area, a city, or tune one
 
-Add an entry to `AREA_PRESETS` in `config.py`, then build it:
+All data; see [agent-guide.md](agent-guide.md) for the steps and [regions.md](regions.md)
+for the fields. In short: add `[areas.<id>]` to the region's `region.toml`, run
+`uv run traffic-sim-region check`, build with `uv run traffic-sim-prepare <id>`, and
+compare with `uv run traffic-sim-run <id>`. Presets live in the region's
+`presets.toml`; `volume` is vehicles per hour *for the region's reference area* (Farmgate,
+for Dhaka), and other areas scale it automatically.
 
-```sh
-cd backend && uv run traffic-sim-prepare <id>
-```
+### Change what a region pack can express
 
-It shows up in the Area dropdown after a page reload. Presets are tuned on Farmgate and
-scaled by each area's main-road lane-km, so a new area needs no extra tuning to start
-with.
-
-### Add or change a preset
-
-Edit `PRESETS` in `presets.py`. `volume` is vehicles per hour *for Farmgate*.
-Other areas scale it automatically. `mix` keys are vehicle type ids from `vtypes.py`.
+Add the field to the dataclasses and parser in `region.py`, use it where it applies,
+document it in [regions.md](regions.md), add it (commented) to `regions/_template/`, and
+cover it in `tests/test_regions.py`. The test that the template parses keeps the
+template in step.
 
 ### Add a vehicle type
 
-1. Add a `VehicleType` to `VEHICLE_TYPES` in `vtypes.py`.
-2. Add it to every preset's `mix` in `presets.py`.
+1. Add a `VehicleType` to `VEHICLE_TYPES` in `vtypes.py`. Every region shares it.
+2. Add it to every preset's `mix` in each region's `presets.toml` (0 where it doesn't
+   run; `traffic-sim-region check` warns about presets that leave it out).
 3. Add its colour to both palettes in `frontend/src/lib/palette.ts`.
 
 The frontend gets the list, sizes and labels from `/api/vehicle-types`, and
@@ -171,15 +204,17 @@ Parse and validate it in `features.py` (`parse_features`), apply it in
 ## Testing
 
 ```sh
-cd backend && uv run pytest              # needs the farmgate area built
+cd backend && uv run pytest              # most tests need the farmgate area built
 cd frontend && npx tsc -b && npm run lint
 ```
 
+- `test_regions.py`: region pack parsing, validation, signal policies and demand
+  scaling. Runs without SUMO or built areas.
 - `test_scenario.py`: closure, signal and layout edit validation, variant building.
 - `test_features.py`: road feature parsing and placement.
 - `test_server.py`: REST endpoints and full simulations over the WebSocket.
 
-The tests use the real Farmgate network and real SUMO, and are skipped if
+The other tests use the real Farmgate network and real SUMO, and are skipped if
 `backend/data/areas/farmgate/` hasn't been built. There are no frontend unit tests;
 check UI changes by hand in the browser, in light and dark mode.
 
@@ -191,6 +226,8 @@ check UI changes by hand in the browser, in light and dark mode.
 - **Watch the WebSocket.** Frames and events are visible in the browser devtools
   Network tab (filter by WS).
 - **Rebuild an area from scratch** if its network looks wrong after changing
-  `prepare.py` or `dhaka.typ.xml`: `uv run traffic-sim-prepare <id>`, or add
-  `--download` to re-fetch OSM.
+  `prepare.py` or a region's `.typ.xml`: `uv run traffic-sim-prepare <id>`, or add
+  `--download` to re-fetch OSM. Rebuilding deletes the area's layout variants.
+- **Try a change without the browser:** `uv run traffic-sim-run <area>` prints the
+  stats the side panel shows.
 - **Stale layout variants** live in `backend/data/variants/` and are safe to delete.

@@ -1,6 +1,8 @@
 export interface Area {
   id: string
   name: string
+  /** The region pack the area belongs to (backend/src/traffic_sim/regions/). */
+  region: string
   city: string
   kind?: 'city' | 'area'
   detail?: 'full' | 'arterial'
@@ -8,7 +10,7 @@ export interface Area {
   center: [number, number]
   edges: number
   road_km: number
-  /** Multiplier for preset volumes, which are tuned on Farmgate. */
+  /** Multiplier for preset volumes, which are tuned on the region's reference area. */
   demand_scale?: number
   /** Multiplier for preset through-traffic shares. */
   through_scale?: number
@@ -34,6 +36,18 @@ export interface Preset {
   volume: number
   through_share: number
   mix: Mix
+}
+
+/** A region pack: one city's presets and defaults. */
+export interface Region {
+  id: string
+  name: string
+  country: string
+  default_area: string
+  default_preset: string
+  presets: Preset[]
+  /** Why a signal is on or off by default, in this city. */
+  signal_notes: { on: string; off: string }
 }
 
 export interface Demand {
@@ -258,6 +272,9 @@ export interface SignalInfo {
   lat: number
   program_id: string
   mode: 'actuated' | 'fixed'
+  /** Runs automatically by default (by the region's signals.toml, or a signal the
+   * user added); otherwise it starts switched off. */
+  automated: boolean
   /** state: one character per link — G/g green, y amber, r red. */
   phases: (PhaseTiming & { state: string })[]
   links: (SignalLink | null)[]

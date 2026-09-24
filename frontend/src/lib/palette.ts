@@ -69,10 +69,3 @@ export const EDIT_RGBA = {
   junction: { light: hex('#fcfcfb', 230), dark: hex('#1a1a19', 230) } as Record<Theme, RGBA>,
   junctionStroke: { light: hex('#52514e'), dark: hex('#c3c2b7') } as Record<Theme, RGBA>,
 }
-
-export const SIGNAL_RGBA: Record<'green' | 'amber' | 'red' | 'off', RGBA> = {
-  green: hex('#0ca30c'),
-  amber: hex('#fab219'),
-  red: hex('#d03b3b'),
-  off: hex('#898781'),
-}

@@ -21,6 +21,13 @@ def test_rest_endpoints():
     assert client.get("/api/areas/../../etc/network").status_code == 404
     assert {v["id"] for v in client.get("/api/vehicle-types").json()} >= {"car", "rickshaw", "cng"}
     assert client.get("/api/presets").json()["presets"]
+    regions = client.get("/api/regions").json()
+    dhaka = next(r for r in regions["regions"] if r["id"] == "dhaka")
+    assert dhaka["presets"] and dhaka["signal_notes"]["off"]
+    assert client.get("/api/presets?region=dhaka").json()["default"] == dhaka["default_preset"]
+    assert client.get("/api/presets?region=nowhere").status_code == 404
+    farmgate = next(a for a in areas["areas"] if a["id"] == "farmgate")
+    assert farmgate["region"] == "dhaka" and farmgate["demand_scale"] == 1.0
 
 
 def test_simulation_streams_frames_and_applies_live_demand():
@@ -114,11 +121,11 @@ def test_battery_rickshaws_run_with_main_road_ban():
 
 def test_demand_cap_scales_with_the_area():
     from traffic_sim.engine import load_area
-    from traffic_sim.server import MAX_VOLUME_FARMGATE, _demand_from, max_volume
+    from traffic_sim.server import MAX_VOLUME_REFERENCE, _demand_from, max_volume
 
     farmgate = load_area("farmgate")
-    assert max_volume(farmgate) == MAX_VOLUME_FARMGATE
-    assert _demand_from({"volume": 1e9}, max_volume(farmgate)).volume == MAX_VOLUME_FARMGATE
+    assert max_volume(farmgate) == MAX_VOLUME_REFERENCE
+    assert _demand_from({"volume": 1e9}, max_volume(farmgate)).volume == MAX_VOLUME_REFERENCE
     assert _demand_from({"volume": -5}, max_volume(farmgate)).volume == 0
     city = AREAS_DIR / "dhaka" / "area.json"
     if city.exists():

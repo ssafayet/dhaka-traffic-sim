@@ -2,7 +2,8 @@
  * Map markers for road features, drawn once into a canvas atlas. Full colour
  * (not tinted), with a white rim so they read on light and dark maps.
  * Colours follow the vehicle palette: bus orange, battery rickshaw amber,
- * CNG green, pedal rickshaw purple; status red for breakdowns.
+ * CNG green, pedal rickshaw purple; status red for breakdowns. Traffic
+ * signals are a signal head with the lamp of the current phase lit.
  */
 
 export type MarkerIcon =
@@ -13,6 +14,10 @@ export type MarkerIcon =
   | 'crossing'
   | 'crossing_active'
   | 'broken'
+  | 'signal_green'
+  | 'signal_amber'
+  | 'signal_red'
+  | 'signal_off'
 
 const SIZE = 48 // px in the atlas; drawn at about half that on the map
 
@@ -25,7 +30,10 @@ let cached: MarkerAtlas | null = null
 
 export function markerAtlas(): MarkerAtlas {
   if (cached) return cached
-  const icons: MarkerIcon[] = ['bus_stop', 'stand_e_rickshaw', 'stand_rickshaw', 'stand_cng', 'crossing', 'crossing_active', 'broken']
+  const icons: MarkerIcon[] = [
+    'bus_stop', 'stand_e_rickshaw', 'stand_rickshaw', 'stand_cng', 'crossing', 'crossing_active', 'broken',
+    'signal_green', 'signal_amber', 'signal_red', 'signal_off',
+  ]
   const canvas = document.createElement('canvas')
   canvas.width = SIZE * icons.length
   canvas.height = SIZE
@@ -110,6 +118,28 @@ function draw(ctx: CanvasRenderingContext2D, icon: MarkerIcon) {
         ctx.closePath()
       }, '#d03b3b')
       letter(ctx, '!')
+      break
+    }
+    case 'signal_green':
+    case 'signal_amber':
+    case 'signal_red':
+    case 'signal_off': {
+      rim(ctx, () => {
+        ctx.beginPath()
+        ctx.roundRect(c - 10, 3, 20, SIZE - 6, 6)
+      }, '#2b2b2b')
+      // Red, amber, green from the top; unlit lamps stay dim.
+      const lamps = [
+        ['signal_red', '#d03b3b', '#5a2a2a'],
+        ['signal_amber', '#fab219', '#5a4a24'],
+        ['signal_green', '#0ca30c', '#24472a'],
+      ]
+      lamps.forEach(([lit, on, off], k) => {
+        ctx.fillStyle = icon === lit ? on : off
+        ctx.beginPath()
+        ctx.arc(c, 11 + k * 13, 5, 0, Math.PI * 2)
+        ctx.fill()
+      })
       break
     }
   }

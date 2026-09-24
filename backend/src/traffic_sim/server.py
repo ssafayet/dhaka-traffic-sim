@@ -1,6 +1,6 @@
 """HTTP + WebSocket API.
 
-REST: areas, road network GeoJSON, vehicle types, presets.
+REST: regions (with their presets), areas, road network GeoJSON, vehicle types.
 WebSocket /ws/sim: one SUMO process per connection. The simulation loop
 runs in a thread and pushes frames onto an asyncio queue.
 
@@ -16,7 +16,9 @@ Client → server messages:
         (the full set; from/to = seconds since midnight for a timed closure; live)
     {"type": "features", "features": {bus_stops, stands, crossings, hot_zones, water, weather,
         breakdowns, elasticity}}   (the full set; see features.py; live)
-    {"type": "signal", "id": tls, "plan": {"mode": "actuated|fixed|off", "phases": [...]} | null}  (live)
+    {"type": "signal", "id": tls, "plan": {"mode": "actuated|fixed|off", "phases": [...]} | null}
+        (live; null = the signal's default: its own program if topology marks it
+        "automated", else off; see signals.py and the region's signals.toml)
     {"type": "speed", "value": n}      0 = as fast as possible
     {"type": "pause"} / {"type": "play"} / {"type": "stop"}
 Server → client:
@@ -46,10 +48,10 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import scenario
-from .config import AREAS_DIR, BACKEND_DIR, DEFAULT_AREA, VARIANTS_DIR
+from .config import AREAS_DIR, BACKEND_DIR, VARIANTS_DIR
 from .demand import DemandSettings
 from .engine import SimOptions, Simulation, list_areas, load_area
-from .presets import DEFAULT_PRESET, PRESETS
+from .region import all_regions, default_region, get_region
 from .features import defaults as feature_defaults
 from .features import parse_features
 from .scenario import EditError, parse_closures, parse_signal
@@ -58,10 +60,11 @@ from .vtypes import VEHICLE_TYPES
 MAX_SIMS = int(os.environ.get("TRAFFIC_SIM_MAX_SIMS", "4"))
 MAX_BUILDS = 2  # netconvert runs at once (layout edits)
 MAX_WARMUP = 3600  # s
-# Vehicles per hour a run may ask for, on Farmgate (which the presets are tuned
-# on; twice the UI slider's top). Other areas scale it by their size, as the
-# presets do (area.json demand_scale), so a whole-city rush hour isn't cut off.
-MAX_VOLUME_FARMGATE = 40_000
+# Vehicles per hour a run may ask for, on a region's reference area (which its
+# presets are tuned on; twice the UI slider's top). Other areas scale it by
+# their size, as the presets do (demand_scale), so a whole-city rush hour isn't
+# cut off.
+MAX_VOLUME_REFERENCE = 40_000
 MAX_FPS = 20  # cap on frames sent per second
 WARMUP_FPS = 4
 # Whole-city runs have tens of thousands of vehicles; a frame costs roughly
@@ -75,9 +78,15 @@ _active = threading.BoundedSemaphore(MAX_SIMS)
 _builds = threading.BoundedSemaphore(MAX_BUILDS)
 
 
+@app.get("/api/regions")
+def regions():
+    """Region packs: names, default area and preset, presets, signal notes."""
+    return {"default": default_region().id, "regions": [r.api() for r in all_regions().values()]}
+
+
 @app.get("/api/areas")
 def areas():
-    return {"default": DEFAULT_AREA, "areas": list_areas()}
+    return {"default": default_region().default_area, "areas": list_areas()}
 
 
 @app.get("/api/areas/{area_id}/network")
@@ -178,12 +187,17 @@ def vehicle_types():
 
 
 @app.get("/api/presets")
-def presets():
-    return {"default": DEFAULT_PRESET, "presets": PRESETS}
+def presets(region: str | None = None):
+    """One region's presets (default: the default region's)."""
+    try:
+        r = get_region(region) if region else default_region()
+    except KeyError:
+        raise HTTPException(404, "unknown region") from None
+    return {"default": r.default_preset, "presets": r.api()["presets"]}
 
 
 def max_volume(area) -> float:
-    return MAX_VOLUME_FARMGATE * max(1.0, float(area.meta.get("demand_scale", 1)))
+    return MAX_VOLUME_REFERENCE * max(1.0, float(area.meta.get("demand_scale", 1)))
 
 
 def _demand_from(msg: dict, max_vol: float, base: DemandSettings | None = None) -> DemandSettings:
@@ -375,7 +389,7 @@ async def ws_sim(ws: WebSocket):
             if kind == "start":
                 await asyncio.to_thread(stop_runner)
                 try:
-                    area = await asyncio.to_thread(load_area, msg.get("area") or DEFAULT_AREA, msg.get("variant"))
+                    area = await asyncio.to_thread(load_area, msg.get("area") or default_region().default_area, msg.get("variant"))
                 except KeyError:
                     offer({"type": "error", "message": "unknown area or road layout"})
                     continue
@@ -424,4 +438,7 @@ def main() -> None:
     p.add_argument("--port", type=int, default=8000)
     p.add_argument("--reload", action="store_true")
     args = p.parse_args()
-    uvicorn.run("traffic_sim.server:app", host=args.host, port=args.port, reload=args.reload)
+    all_regions()  # fail now, with every problem listed, if a region pack is invalid
+    # Reload on code and region pack edits, but not on data/ (area builds write there).
+    reload = {"reload_dirs": [str(BACKEND_DIR / "src")], "reload_includes": ["*.py", "*.toml", "*.json"]} if args.reload else {}
+    uvicorn.run("traffic_sim.server:app", host=args.host, port=args.port, reload=args.reload, **reload)

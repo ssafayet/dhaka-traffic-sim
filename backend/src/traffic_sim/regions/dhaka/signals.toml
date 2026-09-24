@@ -1,0 +1,74 @@
+# Where Dhaka's traffic signals actually run automatically. Field reference:
+# docs/regions.md.
+#
+# Most junctions OpenStreetMap marks with a signal are, in practice, directed by
+# traffic police: the lights are dark or ignored. Automatic signals run only on
+# a few stretches (2025–26):
+#
+# * the Shahbag – Bangla Motor – Karwan Bazar – Farmgate – Bijoy Sarani – PMO –
+#   Jahangir Gate – Mohakhali railgate corridor,
+# * Gulshan 1 and Gulshan 2 circles,
+# * the junctions inside Dhaka Cantonment.
+#
+# The positions are approximate.
+
+# Every other mapped signal starts switched off (police-directed).
+elsewhere = "off"
+note_on = "Runs automatically by default, like the signals on Dhaka’s automatic corridors."
+note_off = "Off by default: outside Dhaka’s automatic corridors, traffic police direct this junction. Switch it on to run it automatically."
+
+# Junctions with an automatic signal. Preparing an area signals them if OSM
+# doesn't (roundabouts keep their give-way rules). radius (m) covers every
+# node of the crossing: divided roads, roundabouts.
+junctions = [
+  { name = "shahbag", lon = 90.39590, lat = 23.73812, radius = 45 },
+  { name = "intercontinental", lon = 90.39600, lat = 23.74136, radius = 45 },
+  { name = "bangla_motor", lon = 90.39483, lat = 23.74588, radius = 40 },
+  # SAARC fountain (Sonargaon) circle: a roundabout.
+  { name = "karwan_bazar", lon = 90.39320, lat = 23.74990, radius = 50 },
+  { name = "farmgate", lon = 90.39000, lat = 23.75860, radius = 60 },
+  { name = "bijoy_sarani", lon = 90.38902, lat = 23.76441, radius = 45 },
+  # Agargaon link road, by the Prime Minister's Office.
+  { name = "pmo", lon = 90.38921, lat = 23.76845, radius = 40 },
+  { name = "old_airport", lon = 90.38970, lat = 23.77097, radius = 35 },
+  { name = "jahangir_gate", lon = 90.38998, lat = 23.77531, radius = 50 },
+  { name = "mohakhali_railgate", lon = 90.39818, lat = 23.77814, radius = 40 },
+  { name = "gulshan_1", lon = 90.41679, lat = 23.78042, radius = 60 },
+  { name = "gulshan_2", lon = 90.41425, lat = 23.79483, radius = 60 },
+]
+
+# Signals within `buffer` metres of this line are automatic. Nothing is added.
+[[corridors]]
+name = "shahbag_mohakhali"
+buffer = 70
+points = [
+  [90.3959, 23.7381],  # Shahbag
+  [90.3960, 23.7414],
+  [90.3948, 23.7459],  # Bangla Motor
+  [90.3932, 23.7499],  # Karwan Bazar
+  [90.3900, 23.7586],  # Farmgate
+  [90.3890, 23.7644],  # Bijoy Sarani
+  [90.3892, 23.7685],  # PMO
+  [90.3900, 23.7753],  # Jahangir Gate
+  [90.3940, 23.7770],
+  [90.3982, 23.7781],  # Mohakhali railgate
+]
+
+# Signals inside the polygon are automatic. add_missing: preparing an area also
+# signals every main-road crossing inside it that OSM leaves unsignalled.
+[[zones]]
+name = "cantonment"  # Dhaka Cantonment, west of Airport Road
+add_missing = true
+polygon = [
+  [90.3880, 23.7775],
+  [90.3950, 23.7790],
+  [90.3975, 23.7850],
+  [90.3990, 23.7905],
+  [90.4005, 23.7990],
+  [90.4018, 23.8070],
+  [90.4030, 23.8145],
+  [90.4080, 23.8190],
+  [90.4110, 23.8230],
+  [90.4100, 23.8350],
+  [90.3880, 23.8350],
+]

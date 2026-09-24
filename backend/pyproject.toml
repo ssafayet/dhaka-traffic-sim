@@ -3,7 +3,7 @@ name = "traffic-sim"
 version = "0.1.0"
 description = "SUMO-backed traffic simulator for Dhaka (and any OSM city)"
 readme = "README.md"
-license = "AGPL-3.0-only"
+license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
     "eclipse-sumo>=1.27.1",
@@ -19,6 +19,8 @@ dependencies = [
 [project.scripts]
 traffic-sim-prepare = "traffic_sim.prepare:main"
 traffic-sim-server = "traffic_sim.server:main"
+traffic-sim-region = "traffic_sim.region:main"
+traffic-sim-run = "traffic_sim.run:main"
 
 [build-system]
 requires = ["uv_build>=0.12.17,<0.13.0"]

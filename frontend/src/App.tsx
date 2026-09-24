@@ -10,6 +10,7 @@ import type {
   LayoutEdits,
   LayoutError,
   Preset,
+  Region,
   RoadFeature,
   RoadFeatures,
   Selection,
@@ -40,7 +41,7 @@ const HISTORY_MAX = 720
 const TOAST_MS = 5000
 const LOCATE_SPAN = 0.002 // degrees around an edit the map zooms to (~200 m)
 
-/** Preset volumes and through shares are for Farmgate; scale them to the area. */
+/** Preset volumes and through shares are for the region's reference area; scale them to the area. */
 function presetDemand(p: Preset, area: Area | undefined): Demand {
   const volume = p.volume * (area?.demand_scale ?? 1)
   const step = volume > 20000 ? 1000 : 50
@@ -69,7 +70,7 @@ export default function App() {
   const [areaId, setAreaId] = useState('')
   const [roads, setRoads] = useState<RoadFeature[]>([])
   const [types, setTypes] = useState<VehicleType[]>([])
-  const [presets, setPresets] = useState<Preset[]>([])
+  const [regions, setRegions] = useState<Region[]>([])
   const [presetId, setPresetId] = useState<string | null>(null)
   const [demand, setDemand] = useState<Demand>({ volume: 6000, mix: {}, through_share: 0.6 })
   const [options, setOptions] = useState<SimOptions>({
@@ -120,7 +121,6 @@ export default function App() {
   const latestFrame = useRef<Frame | null>(null)
   const historyRef = useRef<HistoryPoint[]>([])
   const client = useRef<SimClient | null>(null)
-  const autoStarted = useRef(false)
 
   // Frames arrive up to 20×/s; the map reads the store directly, React state
   // (stats, charts) refreshes at 4 Hz.
@@ -184,14 +184,15 @@ export default function App() {
 
   // Initial data.
   useEffect(() => {
-    Promise.all([api.areas(), api.vehicleTypes(), api.presets()])
-      .then(([a, t, p]) => {
+    Promise.all([api.areas(), api.vehicleTypes(), api.regions()])
+      .then(([a, t, r]) => {
         setAreas(a.areas)
         const initial = a.areas.find((x) => x.id === a.default) ?? a.areas[0]
         setAreaId(initial?.id ?? '')
         setTypes(t)
-        setPresets(p.presets)
-        const def = p.presets.find((x) => x.id === p.default) ?? p.presets[0]
+        setRegions(r.regions)
+        const region = r.regions.find((x) => x.id === initial?.region)
+        const def = region?.presets.find((x) => x.id === region.default_preset) ?? region?.presets[0]
         if (def) {
           setPresetId(def.id)
           setDemand(presetDemand(def, initial))
@@ -249,14 +250,6 @@ export default function App() {
     },
     [areaId, demand, options, speed, store, edges, signalPhases, live, applied.variant, closures, signalPlans, features],
   )
-
-  // Start automatically once everything has loaded.
-  useEffect(() => {
-    if (!autoStarted.current && areaId && types.length && roads.length && Object.keys(demand.mix).length) {
-      autoStarted.current = true
-      start()
-    }
-  }, [areaId, types, roads, demand, start])
 
   // Push demand changes to the running sim (debounced while dragging).
   useEffect(() => {
@@ -329,7 +322,8 @@ export default function App() {
       setClosures(nextClosures)
       setSignalPlans(nextPlans)
       setSelection(null)
-      start({ variant, closures: nextClosures, signals: nextPlans })
+      // Before the first start the new layout just waits for Start.
+      if (active) start({ variant, closures: nextClosures, signals: nextPlans })
     } catch (e) {
       setLayoutErrors(
         e instanceof LayoutEditError ? e.errors : [{ kind: 'other', index: -1, message: 'Could not reach the server to build the road layout.' }],
@@ -372,8 +366,15 @@ export default function App() {
     setAreaId(id)
     setFocus(null)
     resetScenario()
-    const preset = presets.find((x) => x.id === presetId)
+    // Presets belong to a region; in another region, fall back to its default.
+    const toRegion = regions.find((r) => r.id === to?.region)
+    const sameRegion = to?.region === from?.region
+    const preset = sameRegion
+      ? toRegion?.presets.find((x) => x.id === presetId)
+      : (toRegion?.presets.find((x) => x.id === toRegion.default_preset) ?? toRegion?.presets[0])
     if (preset) {
+      setPresetId(preset.id)
+      if (!sameRegion) setOptions((o) => ({ ...o, start_hour: preset.start_hour }))
       setDemand(presetDemand(preset, to))
     } else {
       // Custom demand: keep the same intensity relative to the area's size.
@@ -398,6 +399,8 @@ export default function App() {
   }
 
   const area = areas.find((a) => a.id === areaId) ?? null
+  const region = regions.find((r) => r.id === area?.region)
+  const presets = region?.presets ?? []
   const needsRestart = active && runConfig !== restartKey(areaId, options)
 
   const roadsById = useMemo(() => new Map(roads.map((r) => [r.properties.id, r])), [roads])
@@ -494,6 +497,7 @@ export default function App() {
           building={building}
           layoutErrors={layoutErrors}
           onApplyLayout={applyLayout}
+          running={active}
           onSelect={locate}
           onClearAll={clearAll}
           features={features}
@@ -547,6 +551,7 @@ export default function App() {
               onSelect={setSelection}
               features={features}
               onFeatures={setFeatures}
+              signalNotes={region?.signal_notes}
             />
           )}
           {toast && (

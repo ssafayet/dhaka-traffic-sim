@@ -1,0 +1,93 @@
+# Dhaka region pack. Field reference: docs/regions.md.
+# Check after editing: uv run traffic-sim-region check dhaka
+
+name = "Dhaka"
+country = "Bangladesh"
+driving_side = "left"
+default_area = "farmgate"
+default_preset = "morning_rush"  # an id in presets.toml
+
+[demand]
+# Preset volumes (presets.toml) are vehicles per hour on this area. Every other
+# area scales them by its main-road lane-km over reference_main_lane_km.
+reference_area = "farmgate"
+reference_main_lane_km = 129.2  # "main_lane_km" in data/areas/farmgate/area.json
+# Presets' through-traffic shares are for a neighbourhood, where most traffic is
+# passing through. Across the whole city most trips start and end inside.
+city_through_scale = 0.25
+
+[network]
+# Loaded after SUMO's osmNetconvert.typ.xml: the rickshaw main-road rule.
+type_files = ["roads.typ.xml"]
+
+# Areas `traffic-sim-prepare` can build. bbox = [west, south, east, north].
+#
+# kind "city": the whole city on main roads only (detail "arterial"), so tens
+#   of thousands of vehicles still simulate at interactive speed.
+# kind "area" (default): one neighbourhood, every street, about 3 × 3 km.
+
+[areas.dhaka]
+name = "Whole city (Dhaka North + South)"
+kind = "city"
+detail = "arterial"
+bbox = [90.330, 23.685, 90.500, 23.885]
+
+[areas.farmgate]
+name = "Farmgate – Karwan Bazar – Shahbag"
+bbox = [90.380, 23.738, 90.402, 23.763]
+
+[areas.motijheel]
+name = "Motijheel – Gulistan – Paltan"
+bbox = [90.405, 23.720, 90.428, 23.740]
+
+[areas.gulshan]
+name = "Gulshan 1 – Mohakhali – Banani"
+bbox = [90.395, 23.775, 90.425, 23.797]
+
+[areas.mirpur]
+name = "Mirpur 1 – Mirpur 10 – Kazipara"
+bbox = [90.345, 23.790, 90.378, 23.815]
+
+[areas.dhanmondi]
+name = "Dhanmondi – Science Lab – New Market"
+bbox = [90.365, 23.728, 90.392, 23.758]
+
+[areas.mohammadpur]
+name = "Mohammadpur – Shyamoli – Asad Gate"
+bbox = [90.350, 23.752, 90.378, 23.780]
+
+[areas.gabtoli]
+name = "Gabtoli – Technical – Kallyanpur"
+bbox = [90.335, 23.770, 90.370, 23.795]
+
+[areas.uttara]
+name = "Uttara – Airport – Abdullahpur"
+bbox = [90.385, 23.845, 90.415, 23.882]
+
+[areas.kuril]
+name = "Kuril – Bashundhara – Nadda"
+bbox = [90.410, 23.795, 90.445, 23.830]
+
+[areas.rampura]
+name = "Rampura – Badda – Hatirjheel"
+bbox = [90.405, 23.755, 90.440, 23.790]
+
+[areas.tejgaon]
+name = "Tejgaon – Bijoy Sarani – Mohakhali"
+bbox = [90.383, 23.755, 90.410, 23.778]
+
+[areas.moghbazar]
+name = "Moghbazar – Malibagh – Mouchak"
+bbox = [90.398, 23.738, 90.425, 23.760]
+
+[areas.khilgaon]
+name = "Khilgaon – Basabo – Kamalapur"
+bbox = [90.418, 23.725, 90.448, 23.758]
+
+[areas.old_dhaka]
+name = "Old Dhaka – Sadarghat – Chawkbazar"
+bbox = [90.385, 23.702, 90.418, 23.725]
+
+[areas.jatrabari]
+name = "Jatrabari – Sayedabad – Postogola"
+bbox = [90.418, 23.688, 90.448, 23.725]

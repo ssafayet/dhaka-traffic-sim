@@ -1,0 +1,24 @@
+# Time-of-day scenarios. Say in a comment where each number comes from, or
+# that it is a guess. Field reference: docs/regions.md.
+#
+# volume: vehicles per hour entering the reference area (region.toml [demand]).
+# through_share: 0..1, the share of trips that cross the area border twice.
+# mix: vehicle type id (vtypes.py) → relative weight; missing types get 0.
+
+[[presets]]
+id = "morning_rush"
+label = "Morning rush"
+description = "8–10 am: commuters heading in."
+start_hour = 8.0
+volume = 6000
+through_share = 0.6
+mix = { car = 60, bus = 5, cng = 0, e_rickshaw = 0, motorcycle = 25, truck = 10, rickshaw = 0 }
+
+[[presets]]
+id = "midday"
+label = "Midday"
+description = "12–3 pm: local trips."
+start_hour = 12.0
+volume = 3500
+through_share = 0.45
+mix = { car = 60, bus = 5, cng = 0, e_rickshaw = 0, motorcycle = 25, truck = 10, rickshaw = 0 }

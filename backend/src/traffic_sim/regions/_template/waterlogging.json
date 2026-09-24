@@ -1,0 +1,9 @@
+{
+ "about": "Places reported waterlogged after heavy rain, from news reports. Delete this file if the city has none.",
+ "sources": {
+  "EX1": {"outlet": "Example News", "date": "2026-01-01", "title": "Streets flooded after rain", "url": "https://example.com/flood"}
+ },
+ "spots": [
+  {"id": "w1", "name": "Example underpass", "lon": 0.0125, "lat": 0.0125, "radius": 150, "depth": "knee", "sources": ["EX1"]}
+ ]
+}

@@ -53,6 +53,7 @@ def test_topology_lists_signals_with_their_programs(area):
     for s in topo["signals"]:
         assert all(len(p["state"]) == len(s["links"]) for p in s["phases"])
         assert s["mode"] in ("actuated", "fixed")
+        assert isinstance(s["automated"], bool)
     assert client.get("/api/areas/farmgate/topology?variant=nothere").status_code == 404
     assert client.get("/api/areas/farmgate/network?variant=../../areas/x").status_code == 404
 
@@ -112,7 +113,7 @@ def test_closing_one_lane_keeps_the_road_open(area):
 
 
 def test_signal_plans_apply_and_reset(area):
-    tls, signal = next(iter(area.signals.items()))
+    tls, signal = next((k, s) for k, s in area.signals.items() if s["automated"])
     plan = scenario.parse_signal(area, tls, {
         "mode": "fixed", "phases": [{"duration": 20 if "G" in p["state"] else 3} for p in signal["phases"]],
     })
@@ -126,6 +127,33 @@ def test_signal_plans_apply_and_reset(area):
         assert conn.trafficlight.getProgram(tls) == "off"
         sim.set_signal(tls, None)
         assert conn.trafficlight.getProgram(tls) == signal["program_id"]
+    finally:
+        sim.close()
+
+
+def _signal_near(area, lon, lat):
+    return min(area.signals.values(), key=lambda s: (s["lon"] - lon) ** 2 + (s["lat"] - lat) ** 2)
+
+
+def test_only_signals_on_the_automatic_corridors_run_by_default(area):
+    # Shahbag has no signal in OSM; preparing the area adds one.
+    shahbag = _signal_near(area, 90.3959, 23.7381)
+    assert shahbag["id"].startswith("auto_") and shahbag["automated"]
+    assert _signal_near(area, 90.39483, 23.74588)["automated"]  # Bangla Motor
+    katabon = _signal_near(area, 90.39096, 23.73879)
+    assert not katabon["automated"]
+
+    sim = run(area, 1)
+    try:
+        conn = sim.conn
+        for tls, s in area.signals.items():
+            assert (conn.trafficlight.getProgram(tls) == "off") != s["automated"], tls
+        # Police-directed signals can be switched on, and back to off.
+        tls = katabon["id"]
+        sim.set_signal(tls, scenario.parse_signal(area, tls, {"mode": "actuated", "phases": katabon["phases"]}))
+        assert conn.trafficlight.getProgram(tls).startswith("user")
+        sim.set_signal(tls, None)
+        assert conn.trafficlight.getProgram(tls) == "off"
     finally:
         sim.close()
 
@@ -194,6 +222,7 @@ def test_uturns_and_new_signals_build_a_routable_network(area):
 
     variant = load_area("farmgate", body["variant"])
     assert UNSIGNALISED_JUNCTION in variant.signals
+    assert variant.signals[UNSIGNALISED_JUNCTION]["automated"]  # a signal the user adds runs
     roads = client.get(f"/api/areas/farmgate/network?variant={body['variant']}").json()["features"]
     pieces = {f["properties"]["id"] for f in roads if f["properties"].get("base") == DIVIDED[0]}
     assert pieces == {DIVIDED[0], f"{DIVIDED[0]}.ut0"}

@@ -63,7 +63,11 @@ export default function Docs() {
   useEffect(() => {
     document.title = 'How it works · Dhaka Traffic Sim'
     api.vehicleTypes().then(setTypes).catch(() => setTypes([]))
-    api.presets().then((p) => setPresets(p.presets)).catch(() => setPresets([]))
+    // The guide describes the default region (Dhaka).
+    api
+      .regions()
+      .then((r) => setPresets(r.regions.find((x) => x.id === r.default)?.presets ?? []))
+      .catch(() => setPresets([]))
     api.areas().then((a) => setAreas(a.areas)).catch(() => setAreas([]))
   }, [])
   const neighbourhoods = areas.filter((a) => a.kind !== 'city')
@@ -462,7 +466,8 @@ export default function Docs() {
               <li>
                 <strong>Retime a signal</strong>: choose <em>actuated</em> (each green stretches between a minimum and a maximum while
                 traffic keeps arriving; the default), <em>fixed time</em> (every phase runs for a set time), or <em>off</em> (drivers
-                fall back to the junction's normal right of way). Each phase lists which approaches get green.
+                fall back to the junction's normal right of way). Each phase lists which approaches get green. Signals outside
+                Dhaka's automatic corridors start off, as traffic police direct them; switch one on to run it automatically.
               </li>
             </ul>
             <h3>Changes to the road layout</h3>
@@ -517,8 +522,11 @@ export default function Docs() {
               about 1,500 km), because all of Dhaka's lanes and alleys would be far too many to simulate live.
             </p>
             <p>
-              Traffic signals are placed where OpenStreetMap marks them, merged when a junction has several. Dhaka has relatively few
-              mapped signals, and many of those are run by traffic police in practice.
+              Traffic signals are placed where OpenStreetMap marks them, merged when a junction has several. In practice traffic
+              police direct most of Dhaka's junctions, so only signals on the automatic corridors run by default: Shahbag – Bangla
+              Motor – Karwan Bazar – Farmgate – Bijoy Sarani – PMO – Jahangir Gate – Mohakhali railgate, Gulshan 1 and 2 circles,
+              and the junctions in Dhaka Cantonment. Where OpenStreetMap has no signal on those, the simulator adds one. Every other
+              signal starts switched off, and you can switch any signal on or off.
             </p>
 
             <h3>Vehicles</h3>
@@ -710,7 +718,10 @@ export default function Docs() {
                 Turn restrictions recorded in OpenStreetMap (such as “no right turn”) are not imported yet; only the road layout decides
                 which turns are possible. Use the junction turn rules to add restrictions you know about.
               </li>
-              <li>Signals are only where the map marks them, and they run on automatic plans, not the way traffic police direct them.</li>
+              <li>
+                Police-directed junctions are simulated as signals switched off (drivers follow the right of way), not the way an
+                officer holds and releases each approach. The automatic-corridor zones are approximate.
+              </li>
             </ul>
             <h3>Simplified, or not simulated</h3>
             <ul>
@@ -751,7 +762,7 @@ export default function Docs() {
             <h2>Sources and credits</h2>
             <ul>
               <li>
-                Dhaka Traffic Sim by SSafayet. Open source under the GNU AGPL-3.0:{' '}
+                Dhaka Traffic Sim by SSafayet. Open source under the MIT License:{' '}
                 <a href={SOURCE_URL}>source code on GitHub</a>.
               </li>
               <li>
