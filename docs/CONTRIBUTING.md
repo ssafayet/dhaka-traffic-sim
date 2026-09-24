@@ -3,7 +3,8 @@
 Thanks for wanting to help. Bug reports, data corrections, new areas and code are all
 welcome.
 
-For how the code is organised and how to run it, see [DEVELOPMENT.md](DEVELOPMENT.md).
+For how the code is organised and how to run it, see [development.md](development.md).
+If you work with a coding agent, point it at [agent-guide.md](agent-guide.md).
 
 ## Ways to help
 
@@ -18,9 +19,12 @@ For how the code is organised and how to run it, see [DEVELOPMENT.md](DEVELOPMEN
   `traffic-sim-prepare --download`.
 - **Calibration data.** Real vehicle counts, travel times or signal timings for any
   Dhaka road are the most valuable thing you can contribute. The volumes and driver
-  behaviour are still uncalibrated guesses (see *Reading the numbers* in the README).
-- **Add an area** to `AREA_PRESETS` in `backend/src/traffic_sim/config.py`. Keep it
-  under about 3 × 3 km.
+  behaviour are still uncalibrated guesses (see *Reading the numbers* in
+  [model.md](model.md)).
+- **Add an area or a whole city.** Areas and cities are region packs: data files in
+  `backend/src/traffic_sim/regions/`. See [regions.md](regions.md) for the format and
+  [agent-guide.md](agent-guide.md) for the steps. Keep a neighbourhood under about
+  3 × 3 km, and run `uv run traffic-sim-region check` before you open the PR.
 - **Code.** Look for open issues, or open one describing what you want to change before
   starting anything large, so we can agree on the approach first.
 
@@ -38,8 +42,8 @@ For how the code is organised and how to run it, see [DEVELOPMENT.md](DEVELOPMEN
 
    The backend tests run real SUMO simulations and are skipped unless the Farmgate
    area is built (`uv run traffic-sim-prepare farmgate`). Build it before you run them.
-4. If you changed behaviour that users see, update the README and, where it applies,
-   the in-app guide (`frontend/src/components/Docs.tsx`).
+4. If you changed behaviour that users see, update the docs in `docs/` (or the README)
+   and, where it applies, the in-app guide (`frontend/src/components/Docs.tsx`).
 5. Open a pull request. Say what changed and why, and how you tested it. For UI changes,
    add a screenshot or a short recording.
 
@@ -50,9 +54,9 @@ For how the code is organised and how to run it, see [DEVELOPMENT.md](DEVELOPMEN
   TypeScript and no state library.
 - **Explain Dhaka-specific numbers.** Any constant that stands for something in the real
   world (a speed, a share, a volume, a flood depth) needs a comment saying where it
-  came from, as in `presets.py` and `vtypes.py`. If it is a guess, say so.
-- **Cite sources for data.** New entries in `waterlogging.json` or similar data files
-  need a source, like the existing ones.
+  came from, as in `regions/dhaka/presets.toml` and `vtypes.py`. If it is a guess, say so.
+- **Cite sources for data.** New entries in a region's `waterlogging.json` or similar
+  data files need a source, like the existing ones.
 - **Keep it fast.** Every open browser tab runs its own SUMO process, and the whole-city
   area has tens of thousands of vehicles. Watch per-step work in `engine.py` and the
   size of WebSocket frames.
@@ -76,5 +80,5 @@ Common types: `feat`, `fix`, `docs`, `test`, `refactor`, `build`, `chore`. Scope
 ## License
 
 By contributing, you agree that your contributions are licensed under the GNU AGPL-3.0
-with the additional terms in [NOTICE](NOTICE), like the rest of the project (see
-[LICENSE](LICENSE)).
+with the additional terms in [NOTICE](../NOTICE), like the rest of the project (see
+[LICENSE](../LICENSE)).
