@@ -4,7 +4,8 @@
     uv run traffic-sim-prepare --all                # the whole city + every neighbourhood
     uv run traffic-sim-prepare pallabi --name "Pallabi" --bbox 90.355,23.815,90.375,23.830
 
-Steps: download OSM (Overpass) → netconvert → network.geojson for the map.
+Steps: download OSM (Overpass) → netconvert → signals on Dhaka's automatic
+corridors (signals.py) → network.geojson for the map.
 """
 
 import argparse
@@ -22,6 +23,7 @@ import sumo
 
 from .config import AREA_PRESETS, AREAS_DIR
 from .geo import NetProjection
+from .signals import add_automated_signals
 
 OVERPASS_URLS = [
     "https://overpass-api.de/api/interpreter",
@@ -178,6 +180,9 @@ def prepare_area(
     if force_download or not osm_file.exists():
         download_osm(bbox, osm_file, detail)
     build_net(osm_file, net_file, bbox)
+    added = add_automated_signals(net_file)
+    if added:
+        print(f"  added {added} automatic signal{'s' if added > 1 else ''} OSM doesn't map")
     stats = build_geojson(net_file, area_dir / "network.geojson")
     # Kept apart from map.osm, which deployments leave out.
     from .features import _osm_bus_stops

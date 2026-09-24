@@ -16,7 +16,9 @@ Client → server messages:
         (the full set; from/to = seconds since midnight for a timed closure; live)
     {"type": "features", "features": {bus_stops, stands, crossings, hot_zones, water, weather,
         breakdowns, elasticity}}   (the full set; see features.py; live)
-    {"type": "signal", "id": tls, "plan": {"mode": "actuated|fixed|off", "phases": [...]} | null}  (live)
+    {"type": "signal", "id": tls, "plan": {"mode": "actuated|fixed|off", "phases": [...]} | null}
+        (live; null = the signal's default: its own program if topology marks it
+        "automated", else off, as police direct it; see signals.py)
     {"type": "speed", "value": n}      0 = as fast as possible
     {"type": "pause"} / {"type": "play"} / {"type": "stop"}
 Server → client:

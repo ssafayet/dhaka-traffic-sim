@@ -383,7 +383,7 @@ function JunctionEditor(p: Props & { junction: JunctionInfo }) {
 const MODES: { value: SignalMode; label: string; hint: string }[] = [
   { value: 'actuated', label: 'Actuated', hint: 'Greens stretch between a minimum and maximum while traffic keeps arriving.' },
   { value: 'fixed', label: 'Fixed time', hint: 'Every phase runs for a set time, whatever the traffic.' },
-  { value: 'off', label: 'Off', hint: 'Signal dark: drivers fall back to the junction’s right of way.' },
+  { value: 'off', label: 'Off', hint: 'Signal dark: drivers fall back to the junction’s right of way, as when traffic police wave them through.' },
 ]
 
 function label(kind: string, greenNumber: number) {
@@ -422,6 +422,11 @@ function SignalEditor(p: Props & { signal: SignalInfo }) {
 
   return (
     <>
+      <p className="muted small">
+        {sig.automated
+          ? 'Runs automatically by default, like the signals on Dhaka’s automatic corridors.'
+          : 'Off by default: outside Dhaka’s automatic corridors, traffic police direct this junction. Switch it on to run it automatically.'}
+      </p>
       <div className="seg wide" role="radiogroup" aria-label="Signal control">
         {MODES.map((m) => (
           <button key={m.value} role="radio" aria-checked={plan.mode === m.value} className={plan.mode === m.value ? 'on' : ''} onClick={() => setMode(m.value)}>
@@ -473,7 +478,7 @@ function SignalEditor(p: Props & { signal: SignalInfo }) {
         </>
       )}
       <button disabled={!p.signalPlans[sig.id]} onClick={() => p.onSignalPlan(sig.id, null)}>
-        Reset to the network’s plan
+        {sig.automated ? 'Reset to the network’s plan' : 'Reset to police control (off)'}
       </button>
       <p className="muted small">Timing changes apply at once.</p>
       {p.junctions.has(sig.id) && (

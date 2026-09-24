@@ -271,8 +271,11 @@ class Simulation:
         if self._initial_closures:
             self.closure_rules = list(self._initial_closures)
         self._refresh_lanes()
-        for tls, plan in self._initial_signals.items():
-            self.set_signal(tls, plan)
+        for tls in self.signal_ids:
+            if tls in self._initial_signals:
+                self.set_signal(tls, self._initial_signals[tls])
+            elif not self.area.signals[tls]["automated"]:
+                self.set_signal(tls, None)
 
     def close(self) -> None:
         if self.conn is not None:
@@ -638,11 +641,15 @@ class Simulation:
         self.total_breakdowns += 1
 
     def set_signal(self, tls: str, plan: SignalPlan | None) -> None:
-        """Run a user's timings on a signal (None: the network's own program)."""
+        """Run a user's timings on a signal (None: its default, see signals.py).
+
+        By default a signal on Dhaka's automatic corridors runs the network's
+        own program; any other is switched off, as traffic police direct it.
+        """
         conn = self.conn
         signal = self.area.signals[tls]
         if plan is None:
-            conn.trafficlight.setProgram(tls, signal["program_id"])
+            conn.trafficlight.setProgram(tls, signal["program_id"] if signal["automated"] else "off")
             self.signal_plans.pop(tls, None)
             return
         if plan.mode == "off":

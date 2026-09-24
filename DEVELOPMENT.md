@@ -59,6 +59,10 @@ frames so vehicles still move at 60 fps.
    - `net.net.xml`: the SUMO network
    - `network.geojson`: the roads as the map draws them
    - `area.json`: name, bbox, `demand_scale` and other metadata
+   Preparing also signals the junctions on Dhaka's automatic corridors that OSM leaves
+   unsignalled (`signals.py`). Signals elsewhere start switched off (police-directed);
+   topology marks each signal `automated`, and `Simulation.set_signal(tls, None)`
+   restores that default.
 2. `load_area()` (`engine.py`) reads that directory and caches the parsed network, the
    routable edge pools per vehicle class (`demand.py`) and the topology used by the road
    editor (`scenario.py`).
@@ -88,6 +92,7 @@ Nothing in `backend/data/` is committed; it is all rebuilt from OSM.
 | --- | --- |
 | `config.py` | Paths and `AREA_PRESETS` (the areas `traffic-sim-prepare` knows) |
 | `prepare.py` | OSM download → netconvert → `network.geojson` and `area.json` |
+| `signals.py` | Where signals run automatically; adds the missing ones when an area is prepared |
 | `vtypes.py` | Vehicle types: size, speed, gap-taking; writes the SUMO vTypes |
 | `demand.py` | Live trip generation and routable edge pools |
 | `presets.py` | Time-of-day scenarios: volume, mix, through-traffic share |

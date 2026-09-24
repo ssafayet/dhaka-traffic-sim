@@ -258,6 +258,9 @@ export interface SignalInfo {
   lat: number
   program_id: string
   mode: 'actuated' | 'fixed'
+  /** Runs automatically by default (Dhaka's automatic corridors, or a signal the
+   * user added); otherwise it starts switched off, as traffic police direct it. */
+  automated: boolean
   /** state: one character per link — G/g green, y amber, r red. */
   phases: (PhaseTiming & { state: string })[]
   links: (SignalLink | null)[]

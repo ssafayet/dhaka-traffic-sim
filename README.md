@@ -90,6 +90,7 @@ in the side panel, or go to `/#docs`.
 ```
 backend/src/traffic_sim/
   prepare.py   OSM download (Overpass) → netconvert → network.geojson for the map
+  signals.py   Where signals run automatically (Dhaka's corridors); the rest start off
   vtypes.py    Dhaka vehicle types: size, speed, gap-taking behaviour
   demand.py    Live trip generation: through traffic enters/exits at the area border,
                local trips start/end on streets weighted by lane-km
@@ -118,7 +119,8 @@ signal. There are two kinds of change:
   - Traffic signal timings: *actuated* (a green stretches between a minimum and
     a maximum while traffic keeps arriving), *fixed time* (set durations), or
     *off* (drivers fall back to the junction's right of way). Which movements
-    get green in each phase comes from the network.
+    get green in each phase comes from the network. Signals outside Dhaka's
+    automatic corridors start off (see below); any signal can be switched on.
 - **Road features and weather**, also live, placed with the tools above the map:
   - Bus stops (buses stop in the kerb lane), rickshaw and CNG stands (vehicles
     parked at the kerb plus pickups), pedestrian crossing spots (people hold up
@@ -169,6 +171,14 @@ Choices that are specific to Dhaka:
   (~1,500 km, 5,000 segments). Every residential lane in Dhaka would be ~100k segments,
   too many to simulate live. Neighbourhood areas include every street. Preset volumes
   are tuned on Farmgate and scaled to each area by its main-road lane-km.
+- **Most signals are off; traffic police direct them.** Automatic signals run only on
+  the Shahbag – Bangla Motor – Karwan Bazar – Farmgate – Bijoy Sarani – PMO – Jahangir
+  Gate – Mohakhali railgate corridor, at Gulshan 1 and 2 circles, and in Dhaka
+  Cantonment. Preparing an area adds signals there where OpenStreetMap has none
+  (roundabouts, such as the SAARC circle at Karwan Bazar, keep their give-way rules).
+  Every other mapped signal starts switched off, which is how police control is
+  approximated. The zones are in `backend/src/traffic_sim/signals.py`. A signal you add
+  runs automatically.
 - **Trucks** make up about 2% of daytime traffic and 19% in the night preset,
   matching the city's truck entry hours after 10 pm.
 

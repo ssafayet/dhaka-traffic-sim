@@ -97,8 +97,9 @@ export function pruneSignalPlans(plans: Record<string, SignalPlan>, topology: To
   )
 }
 
+/** How the signal runs unless the user changes it: police-directed ones start off. */
 export function defaultPlan(s: SignalInfo): SignalPlan {
-  return { mode: s.mode, phases: s.phases.map(({ duration, min, max }) => ({ duration, min, max })) }
+  return { mode: s.automated ? s.mode : 'off', phases: s.phases.map(({ duration, min, max }) => ({ duration, min, max })) }
 }
 
 export function samePlan(a: SignalPlan, b: SignalPlan) {
@@ -115,6 +116,14 @@ export type PhaseKind = 'green' | 'amber' | 'red'
 export function phaseKind(state: string): PhaseKind {
   if (/[Gg]/.test(state)) return 'green'
   if (/y/.test(state)) return 'amber'
+  return 'red'
+}
+
+/** What drivers on one approach see: green if any of its movements has green. */
+export function approachLight(state: string, links: number[]): PhaseKind {
+  const chars = links.map((i) => state[i])
+  if (chars.some((ch) => ch === 'G' || ch === 'g')) return 'green'
+  if (chars.some((ch) => ch === 'y' || ch === 'Y')) return 'amber'
   return 'red'
 }
 
