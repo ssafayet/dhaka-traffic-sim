@@ -762,7 +762,7 @@ export default function Docs() {
             <h2>Sources and credits</h2>
             <ul>
               <li>
-                Dhaka Traffic Sim by SSafayet. Open source under the GNU AGPL-3.0:{' '}
+                Dhaka Traffic Sim by SSafayet. Open source under the MIT License:{' '}
                 <a href={SOURCE_URL}>source code on GitHub</a>.
               </li>
               <li>

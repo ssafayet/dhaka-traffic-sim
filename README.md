@@ -11,8 +11,12 @@ The simulation engine is [SUMO](https://eclipse.dev/sumo/) running on OpenStreet
 data. The browser only draws the map and controls; each browser tab gets its own SUMO
 process on the server.
 
-**Status: Phase 1 (view-only MVP).** Editing roads and comparing scenarios comes in
-Phase 2.
+You can edit the roads while it runs: close roads or lanes, retime signals, add U-turns
+and turn rules, and place bus stops, stands, crossings, market zones, rain and flooding.
+
+**Status: early, uncalibrated.** Traffic volumes and driver behaviour are informed
+guesses, so use it to compare scenarios, not to predict real travel times. Calibrating
+against real vehicle counts is next (see [docs/model.md](docs/model.md)).
 
 ## Run it
 
@@ -88,7 +92,5 @@ Contributions are welcome, especially local knowledge and real traffic data. See
 
 ## License
 
-Copyright (C) 2026 SSafayet. Licensed under the [GNU AGPL-3.0](LICENSE), with an
-attribution term (see [NOTICE](NOTICE)): copies and modified versions, including
-hosted ones, must keep the "By SSafayet" credit and source link in the UI, and must
-offer their users the source code.
+Copyright (c) 2026 SSafayet. Licensed under the [MIT License](LICENSE). Road data is
+© OpenStreetMap contributors; see [NOTICE](NOTICE) for third-party data and software.

@@ -79,6 +79,5 @@ Common types: `feat`, `fix`, `docs`, `test`, `refactor`, `build`, `chore`. Scope
 
 ## License
 
-By contributing, you agree that your contributions are licensed under the GNU AGPL-3.0
-with the additional terms in [NOTICE](../NOTICE), like the rest of the project (see
-[LICENSE](../LICENSE)).
+By contributing, you agree that your contributions are licensed under the MIT License,
+like the rest of the project (see [LICENSE](../LICENSE)).
